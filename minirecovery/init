@@ -1,0 +1,105 @@
+#!/sbin/busybox sh
+# PID 1 of the sk1wg mini recovery.
+#
+# The stock Android 5.1 init cannot be used: on a "user" build it insists on
+# loading an SELinux policy and then confines everything, and the stock adbd
+# drops to the shell uid. So this script is init. It never loads an SELinux
+# policy, so SELinux allows everything, and it brings up adb by hand.
+#
+# It is meant to be started with "fastboot boot": it runs from RAM and
+# writes nothing to the eMMC by itself.
+#
+# There is no console, so progress is shown on the panel:
+#   1. the backlight blinks 3 times   init is running
+#   2. the screen fills with noise    /dev is populated, framebuffer found
+#   3. the screen turns white         USB gadget enabled
+#   4. the screen turns black         adbd started
+
+export PATH=/sbin:/system/bin
+bb=/sbin/busybox
+
+$bb mount -t proc proc /proc
+$bb mount -t sysfs sysfs /sys
+
+bl=/sys/class/backlight/pwm-backlight/brightness
+for i in 1 2 3; do
+    echo 0 > $bl; $bb sleep 1
+    echo 255 > $bl; $bb sleep 1
+done
+
+# The stock 3.4 kernel has no devtmpfs: mdev fills a tmpfs /dev instead.
+$bb mount -t tmpfs -o mode=0755 tmpfs /dev
+$bb mkdir -p /dev/pts /dev/block
+$bb mount -t devpts devpts /dev/pts
+$bb mount -t tmpfs -o mode=1777 tmpfs /tmp
+
+exec > /tmp/init.log 2>&1
+set -x
+
+echo /sbin/mdev > /proc/sys/kernel/hotplug
+mdev -s
+. /sbin/minirecovery-lib.sh
+make_by_name_links
+
+# 1920x1080, 32 bpp
+fb=/dev/fb0
+fbsize=$((1920 * 1080 * 4))
+fill_fb() {
+    dd if="$1" of=$fb bs=$((1920 * 4)) count=1080
+}
+fill_fb /dev/urandom
+
+# adbd drops to uid shell with group adb (1011), as on stock (ueventd.rc).
+# mdev makes every node root-only, so open up what the shell user needs
+# (adb shell allocates a pty), with the same modes as stock ueventd.rc.
+chown 0:1011 /dev/android_adb /dev/android_adb_enable
+chmod 0660 /dev/android_adb /dev/android_adb_enable
+chmod 0666 /dev/null /dev/zero /dev/full /dev/ptmx /dev/tty /dev/random /dev/urandom
+
+# The rootrun queue (served by the loop at the end) must exist before
+# adbd starts, or an early rootrun fails.
+q=/tmp/rootq
+mkdir -p $q
+chown 0:2000 $q
+chmod 0770 $q
+
+# adb over the same USB IDs as stock "mtp,adb", so Windows reuses the
+# driver it already bound to interface MI_01. MTP has no daemon here and
+# simply stays idle.
+serial=$(sed -n 's/.*androidboot.serialno=\([^ ]*\).*/\1/p' /proc/cmdline)
+g=/sys/class/android_usb/android0
+echo 0 > $g/enable
+echo 0955 > $g/idVendor
+echo 7100 > $g/idProduct
+echo JIDE > $g/iManufacturer
+echo "REMIX SK1WG minirecovery" > $g/iProduct
+# printf, not echo: a trailing newline would end up in the adb serial
+[ -n "$serial" ] && printf '%s' "$serial" > $g/iSerial
+echo mtp,adb > $g/functions
+echo 1 > $g/enable
+
+white() { tr '\0' '\377' < /dev/zero | dd of=$fb bs=$((1920 * 4)) count=1080; }
+white
+
+/sbin/adbd &
+sleep 2
+fill_fb /dev/zero
+
+# Root command queue. su from the adb shell is uid 0 but adbd has dropped
+# every capability except setuid/setgid from the bounding set, so it can
+# read block devices but cannot mount or reboot. PID 1 keeps all of them:
+# "rootrun <cmd>" drops a script in /tmp/rootq and this loop runs it.
+# PID 1 must never exit.
+set +x
+while :; do
+    for s in $q/*.sh; do
+        [ -f "$s" ] || continue
+        b=${s%.sh}
+        sh "$s" > "$b.out" 2>&1
+        echo $? > "$b.rc.tmp"
+        chmod 0644 "$b.out" "$b.rc.tmp"
+        mv "$b.rc.tmp" "$b.rc"
+        rm -f "$s"
+    done
+    sleep 1
+done

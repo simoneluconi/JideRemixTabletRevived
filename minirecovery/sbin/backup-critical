@@ -1,0 +1,49 @@
+#!/sbin/sh
+# Read-only backup of everything on the eMMC except the big filesystems
+# (system, cache, userdata), into /tmp/backup, for "adb pull".
+#
+# It only reads: every dd has the eMMC as input and /tmp (RAM) as output.
+# Run it as root: su -c backup-critical
+set -eu
+. /sbin/minirecovery-lib.sh
+make_by_name_links
+
+out=/tmp/backup
+mkdir -p "$out"
+cd "$out"
+
+# eMMC hardware boot partitions (on Tegra 4 the BCT lives here)
+for b in mmcblk0boot0 mmcblk0boot1; do
+    [ -e "/dev/$b" ] && dd if="/dev/$b" of="$b.img" bs=4096
+done
+
+# Everything before the first GPT partition: NVIDIA's BCT/PT/EBT area
+start=$(cat /sys/block/mmcblk0/mmcblk0p1/start)
+dd if=/dev/mmcblk0 of=mmcblk0-head.img bs=512 count="$start"
+# The backup GPT at the end of the disk
+total=$(cat /sys/block/mmcblk0/size)
+dd if=/dev/mmcblk0 of=mmcblk0-tail.img bs=512 skip=$((total - 34)) count=34
+
+# Every partition except the large filesystems
+: > partitions.txt
+for p in /sys/block/mmcblk0/mmcblk0p*; do
+    n=${p##*/}
+    name=$(sed -n 's/^PARTNAME=//p' "$p/uevent")
+    echo "$n $name start=$(cat "$p/start") size=$(cat "$p/size")" >> partitions.txt
+    case "$name" in
+        APP|CAC|UDA) continue ;;
+    esac
+    dd if="/dev/$n" of="${n}-${name:-noname}.img" bs=4096
+done
+
+# Device facts that the adb shell user could not read under stock Android
+cat /proc/cmdline > cmdline.txt
+[ -d /proc/device-tree ] && tar -cf device-tree.tar -C /proc device-tree
+for f in name fwrev hwrev manfid oemid date cid csd ext_csd; do
+    [ -e "/sys/block/mmcblk0/device/$f" ] && echo "$f=$(cat /sys/block/mmcblk0/device/$f)"
+done > emmc.txt 2>/dev/null || true
+
+md5sum *.img > md5sums.txt
+chmod -R a+rX "$out"
+du -sh "$out"
+echo "backup-critical: done, pull $out"

@@ -1,0 +1,16 @@
+#!/sbin/sh
+# rootrun <command...>: run a command as PID 1 (full root, all capabilities)
+# and print its output. See the root command queue at the end of /init.
+#   adb shell rootrun mount -o ro /dev/block/by-name/APP /mnt
+#   adb shell rootrun reboot-to bootloader
+q=/tmp/rootq
+f=$q/$$.$(date +%s)
+printf '%s\n' "$*" > "$f.tmp"
+mv "$f.tmp" "$f.sh"
+while [ ! -f "$f.rc" ]; do
+    sleep 1
+done
+cat "$f.out"
+rc=$(cat "$f.rc")
+rm -f "$f.out" "$f.rc"
+exit "$rc"

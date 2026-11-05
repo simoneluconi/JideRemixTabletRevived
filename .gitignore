@@ -1,0 +1,55 @@
+# --- Never public: Jide/NVIDIA firmware, stock dumps, per-device data ---
+# Official firmware, stock dumps, partition backups, boot logs
+# (dmesg carries the serial and the kernel cmdline with an otf_key)
+/device-dump/
+# A stock /system or vendor pulled into the repo root by mistake
+/system/
+/vendor/
+# Firmware and partition images, wherever they land
+*.img
+*.img.md5
+*.zip
+*.bin
+*.blob
+*.bct
+*.dtb
+*.hcd
+# Device identity: getprop/wifi dumps carry the serial and the Wi-Fi MAC
+getprop*.txt
+wifi.txt
+fastboot-getvar*.txt
+# Developer adb keys (they would be baked into builds)
+adb_keys
+adbkey
+adbkey.pub
+
+# --- Private working notes and local settings ---
+# The device serial and the local setup (CLAUDE.md imports it)
+/CLAUDE.local.md
+/.claude/
+
+# --- Build outputs ---
+build/
+out/
+*.apk
+*.aab
+*.so
+*.o
+__pycache__/
+*.pyc
+
+# --- Signing keys ---
+*.jks
+*.keystore
+*.p12
+*.pem
+*.pk8
+keystore.properties
+
+# --- IDE and OS ---
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
