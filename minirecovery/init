@@ -9,23 +9,14 @@
 # It is meant to be started with "fastboot boot": it runs from RAM and
 # writes nothing to the eMMC by itself.
 #
-# There is no console, so progress is shown on the panel:
-#   1. the backlight blinks 3 times   init is running
-#   2. the screen fills with noise    /dev is populated, framebuffer found
-#   3. the screen turns white         USB gadget enabled
-#   4. the screen turns black         adbd started
+# There is no console: a status screen (res/screen.raw.gz, made by
+# mkscreen.py) is drawn on the panel once /dev is populated.
 
 export PATH=/sbin:/system/bin
 bb=/sbin/busybox
 
 $bb mount -t proc proc /proc
 $bb mount -t sysfs sysfs /sys
-
-bl=/sys/class/backlight/pwm-backlight/brightness
-for i in 1 2 3; do
-    echo 0 > $bl; $bb sleep 1
-    echo 255 > $bl; $bb sleep 1
-done
 
 # The stock 3.4 kernel has no devtmpfs: mdev fills a tmpfs /dev instead.
 $bb mount -t tmpfs -o mode=0755 tmpfs /dev
@@ -41,13 +32,9 @@ mdev -s
 . /sbin/minirecovery-lib.sh
 make_by_name_links
 
-# 1920x1080, 32 bpp
-fb=/dev/fb0
-fbsize=$((1920 * 1080 * 4))
-fill_fb() {
-    dd if="$1" of=$fb bs=$((1920 * 4)) count=1080
-}
-fill_fb /dev/urandom
+# Status screen: 1920x1080, 32 bpp, grey levels only
+zcat /res/screen.raw.gz > /dev/fb0
+echo 255 > /sys/class/backlight/pwm-backlight/brightness
 
 # adbd drops to uid shell with group adb (1011), as on stock (ueventd.rc).
 # mdev makes every node root-only, so open up what the shell user needs
@@ -78,12 +65,7 @@ echo "REMIX SK1WG minirecovery" > $g/iProduct
 echo mtp,adb > $g/functions
 echo 1 > $g/enable
 
-white() { tr '\0' '\377' < /dev/zero | dd of=$fb bs=$((1920 * 4)) count=1080; }
-white
-
 /sbin/adbd &
-sleep 2
-fill_fb /dev/zero
 
 # Root command queue. su from the adb shell is uid 0 but adbd has dropped
 # every capability except setuid/setgid from the bounding set, so it can

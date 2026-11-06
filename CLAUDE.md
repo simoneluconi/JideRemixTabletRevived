@@ -43,6 +43,16 @@ Target **LineageOS 21 directly** (user decision 2026-11-05), on the LineageOS-UL
 - Patch source for Android 8+ kernel requirements: LineageOS/android_kernel_nvidia_roth `lineage-15.1` (Tegra 4, has macallan board files).
 - Toolchain: AOSP `arm-linux-androideabi-4.9` (pie-release) in `~/android/toolchains/`. Host tools of a 3.4 tree need `HOSTCFLAGS=... -fcommon` (old dtc). Full build of cm13 kernel: ~80 s.
 
+## Our kernel branch `sk1wg` (2026-11-06)
+
+In `~/android/sk1wg/kernel-cm13-sk1wg`, on top of `origin/cm-13.0`; to become a public GitHub fork. Defconfig **`lineageos_sk1wg_defconfig`**, LOCALVERSION `-sk1wg`.
+- From roth `lineage-15.1` (cherry-picked with `-x`): ambient capabilities, the binder series (64-bit ABI, binder/hwbinder/vndbinder, scatter-gather, fd arrays), kuid/userns, the new UID routing (FRA_UID_RANGE; the old Android-6 FRA_UID_START/END version reverted first), no_new_privs (in atomic_flags), the full seccomp-bpf series with TSYNC and the seccomp syscall. Skipped as already in 3.4.112: `for_each_thread()` (list in `~/android/sk1wg/roth-skipped.txt`).
+- From html6405 (via format-patch, the GitHub fetch stalls): getrandom (adapted: no `prandom_reseed_late` here), memfd_create plus the sealing definitions only (as html6405), ARM 8-byte `get_user()` (by hand; needed by the 64-bit binder ABI on 32-bit ARM).
+- Ours: ARM syscalls 384 getrandom, 385 memfd_create (**382 renameat2 reserved, not backported**: html6405's patch does not fit our fs/namei.c); removed a stale uncompilable `cpuset_can_attach` (CPUSETS was never on before).
+- Not done: eBPF (html6405's 415 commits; LineageOS-UL copes without), renameat2, sdcardfs, O_TMPFILE, PR_SET_VMA.
+- **Stock Remix OS needs the 32-bit binder ABI**: test it with a variant built with `CONFIG_ANDROID_BINDER_IPC_32BIT=y` (`out-sk1wg-ipc32`). LineageOS 21 needs `=n` (the defconfig default).
+- Tested 2026-11-06 with that variant (`fastboot boot`): Remix OS boots in 2.5 min (battery 98%), binder + hwbinder + vndbinder nodes, seccomp on, Wi-Fi, audio, touch. The `gpio_ensure_requested` warnings from `kai_sensor_power_on` (camera) also appear on the stock kernel.
+
 ## Test results (2026-11-05)
 
 - `fastboot boot` works with the stock boot.img, our mini recovery, and our kernel.

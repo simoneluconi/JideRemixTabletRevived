@@ -7,7 +7,8 @@
 #            <busybox static ARM binary> <su static ARM binary> <out dir>
 # REBOOT_TO=<static ARM build of minirecovery/reboot-to.c> is required too.
 # KERNEL=<zImage> replaces the stock kernel, to test our own kernel with this
-# known-good ramdisk.
+# known-good ramdisk. CMDLINE=<string> sets the boot image's command line
+# (empty on stock), e.g. to see whether the bootloader appends it.
 # Needs python3, cpio and mkbootimg.py from an Android tree (MKBOOTIMG to
 # override the default path).
 #
@@ -31,9 +32,12 @@ python3 "$here/tools/unpackboot.py" "$boot" "$work/boot" > /dev/null
 python3 "$here/tools/unpackboot.py" "$recovery" "$work/recovery" > /dev/null
 r=$work/root
 
-for d in dev proc sys tmp sbin system system/bin data; do
+for d in dev proc sys tmp sbin system system/bin data res; do
     install -d -m 0755 "$r/$d"
 done
+
+# Status screen (needs python3 with Pillow and the DejaVu fonts)
+python3 "$src/mkscreen.py" "$r/res/screen.raw.gz"
 
 # Ours
 install -m 0750 "$src/init" "$r/init"
@@ -69,6 +73,7 @@ install -m 0750 "${REBOOT_TO:?set REBOOT_TO to the static ARM reboot-to binary}"
 mkdir -p "$out"
 python3 "$mkbootimg" --header_version 0 \
     --kernel "${KERNEL:-$work/boot/zImage}" --ramdisk "$work/ramdisk.gz" \
+    --cmdline "${CMDLINE:-}" \
     --base 0x10000000 --pagesize 2048 \
     --kernel_offset 0x00008000 --ramdisk_offset 0x01000000 \
     --second_offset 0x00f00000 --tags_offset 0x00000100 \

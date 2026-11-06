@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Jide Remix Ultra Tablet (sk1wg) bring-up on top of LineageOS-UL 21.
+     The device tree and kernel are local for now (device/jide/sk1wg,
+     kernel/jide/sk1wg). The legacy-kernel fixes below are the ones made for
+     Galaxy Camera Revived (branch gd1 of the simoneluconi forks): none of
+     them is specific to the Galaxy Camera. -->
+<manifest>
+  <remote name="html6405" fetch="https://github.com/html6405" />
+  <remote name="simoneluconi" fetch="https://github.com/simoneluconi" />
+
+  <!-- LineageOS-UL dropped vendor.lineage.power@1.0; html6405's fork keeps it -->
+  <remove-project name="LineageOS-UL/android_hardware_lineage_interfaces" />
+  <project path="hardware/lineage/interfaces" name="android_hardware_lineage_interfaces" remote="html6405" revision="lineage-21.0-qpr3" />
+
+  <!-- frameworks/av and frameworks/base with camera HAL1 (html6405's pair,
+       UL's final head merged on top). NVIDIA's T114 camera.tegra.so is an
+       old HAL; keeping HAL1 support leaves that door open -->
+  <remove-project name="LineageOS-UL/android_frameworks_av" />
+  <project path="frameworks/av" name="android_frameworks_av" remote="simoneluconi" revision="gd1" />
+  <remove-project name="LineageOS-UL/android_frameworks_base" />
+  <project path="frameworks/base" name="android_frameworks_base" remote="simoneluconi" revision="gd1" />
+
+  <!-- Kernel 3.4 fixes: tombstoned without O_TMPFILE, adbd without
+       FunctionFS AIO, unwinding without PTRACE_GETREGSET, a pthread_t check
+       some old GLES blobs need -->
+  <remove-project name="LineageOS-UL/android_bionic" />
+  <project path="bionic" name="android_bionic" remote="simoneluconi" revision="gd1" />
+  <remove-project name="LineageOS-UL/android_system_core" />
+  <project path="system/core" name="android_system_core" remote="simoneluconi" revision="gd1" />
+  <remove-project name="LineageOS-UL/android_packages_modules_adb" />
+  <project path="packages/modules/adb" name="android_packages_modules_adb" remote="simoneluconi" revision="gd1" />
+  <remove-project name="platform/system/unwinding" />
+  <project path="system/unwinding" name="android_system_unwinding" remote="simoneluconi" revision="gd1" groups="pdk" />
+  <!-- Launcher: recents animation race that left Home unable to take touches -->
+  <remove-project name="LineageOS/android_packages_apps_Trebuchet" />
+  <project path="packages/apps/Trebuchet" name="android_packages_apps_Trebuchet" remote="simoneluconi" revision="gd1" groups="pdk-fs,sysui-studio" />
+</manifest>
