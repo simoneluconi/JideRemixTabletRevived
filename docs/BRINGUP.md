@@ -92,12 +92,16 @@ System and system_ext flashed to APP and CAC, userdata formatted, boot only RAM-
 | 6 | SurfaceFlinger, Skia RenderEngine | `Failed to create a valid texture` in `primeShaderCache` | `debug.renderengine.backend=gles` (device tree, as smdk4412-common) |
 | 7 | GLES RenderEngine | every shader fails to compile, empty info log | `libcgdrv.so` (NVIDIA's GLSL compiler, dlopen()ed by `libGLESv2_tegra_impl.so`) was missing from `proprietary-files.txt` |
 | 8 | any process death | `binder: unknown command 0`, servicemanager and hwservicemanager abort | `BC_DEAD_BINDER_DONE` skipped `sizeof(void *)` (4) instead of the 8-byte cookie (kernel) |
+| 9 | SurfaceFlinger, first shader | SIGSEGV at 0x10001 in `libGLESv2_tegra_impl.so` | `libnvcpl.so`/`libcplconnectclient.so` build an Android 5.1 `android::Parcel` on their stack; Android 14's is bigger and overwrote the caller's saved registers. Replaced by binder-free stubs (`shims/nvcpl_stub.c`) that report "not available" |
+| 10 | system_server, PackageManager | `There must be exactly one permissions manager; found []` | apexd's `realpath()` on a binder thread: with `/proc` at hidepid=2, 3.4 refused sub-threads their own `/proc/self/fd`. Kernel: "__ptrace_may_access() should not deny sub-threads" (73af963f9f30) and the `proc_fd_permission()` thread fixes (96d0df79f264, 54708d2858e7) |
+| 11 | bootanimation, `eglCreateWindowSurface` | SIGSEGV in `NvGrLock()` at header page + 0x48; RenderEngine `EGL_BAD_ALLOC` | NVIDIA's gralloc keeps the allocating pid in the handle (offset 0x14) and skips the mapping for "its own" buffers; Android 14 imports a clone in the allocating process and frees the original. The mapper clears that pid on its clone (`interfaces/mapper/Gralloc0Mapper.cpp`) |
+| 12 | system_server, AlarmManager | `kernel does not support timerfd_create() with alarm timers` | timerfd alarm clocks and CLOCK_BOOTTIME (html6405's picks of 11ffa9d6065f, 4a2378a943f0) plus the alarmtimer helpers they need, written for 3.4's per-base timer |
 
-Still open after 8 (2026-11-07 15:20):
-- SurfaceFlinger crashes (SIGSEGV at 0x10001) inside `libGLESv2_tegra_impl.so` from `glGetShaderiv()` while `ProgramCache::primeCache()` compiles its first shader. Before `libcgdrv.so` the compile failed cleanly. The driver also has a shader cache under `/data/data/%s/cache` (`NV_SHADER_CACHE`).
-- RenderEngine's placeholder EGLImage fails with `EGL_BAD_ALLOC`, and bootanimation crashes in `NvGrLock()` (gralloc) from `eglCreateWindowSurface()`: buffers allocated by the allocator HAL in another process may not be what NVIDIA's 5.1 gralloc/EGL expect.
-- system_server: `There must be exactly one permissions manager; found []`. apexd's `realpath()` fails with ENOENT for every pre-installed APEX when system_server asks for them (`getAllPackages`), about 45 s after the same process resolved them fine at boot, so PackageManager never scans the APEX apps.
-- After a while USB drops to MTP only (0955:7102) and adb disappears. The `mtp` + `ro.debuggable` rule in `init.macallan.usb.rc` did not keep it; cause not found yet.
+After 12 (2026-11-07 15:53) SurfaceFlinger and bootanimation run without crashing.
+
+Notes:
+- Earlier, USB dropped to MTP only (0955:7102) and adb disappeared while Android was crash-looping; not seen since the binder fix (8).
+- `adb root` does not work without "Rooted debugging" in the settings.
 - The persisted logcat (`/data/misc/logd`) survives a forced power-off only up to its last rotation; read it from the mini recovery with `rootrun` (mount UDA read-only).
 
 After 4, init gets through early-init: apexd mounts the APEX packages on loop devices (`LOOP_SET_BLOCK_SIZE` fails without consequences), linkerconfig runs, and the tablet stays up with the USB gadget (adb, MTP) enumerated. Not fatal, to look at later: no blkio, memcg or cgroup v2 controllers (`libprocessgroup` warnings), `/acct` read-only, `ueventd.rc` lines with the `net_bt_stack` gid and a 4-field `/sys/` entry.
