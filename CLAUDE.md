@@ -43,6 +43,15 @@ Target **LineageOS 21 directly** (user decision 2026-11-05), on the LineageOS-UL
 - Patch source for Android 8+ kernel requirements: LineageOS/android_kernel_nvidia_roth `lineage-15.1` (Tegra 4, has macallan board files).
 - Toolchain: AOSP `arm-linux-androideabi-4.9` (pie-release) in `~/android/toolchains/`. Host tools of a 3.4 tree need `HOSTCFLAGS=... -fcommon` (old dtc). Full build of cm13 kernel: ~80 s.
 
+## LineageOS 21 tree (2026-11-06)
+
+- **`~/android/lineage-sk1wg`** (WSL): LineageOS-UL 21, own tree (never build sk1wg in the Galaxy Camera's `~/android/lineage`). Synced with `manifests/sk1wg.xml` + GalaxyCameraRevived's `zz-lineage-snapshot.xml`, `--reference` to the GC tree.
+- `device/jide/sk1wg` (git, branch `lineage-21.0`), `kernel/jide/sk1wg` (clone of our kernel branch `sk1wg`; `git pull` after kernel commits), `vendor/jide/sk1wg` (from `extract-files.sh <device-dump/stock-2.0.305>`, never committed).
+- `lunch lineage_sk1wg-ap2a-userdebug`; `m bootimage` works (6 min). Details, graphics analysis, partition plan and the two test paths (eMMC or microSD with `SK1WG_SDCARD_ROOT=true`): [docs/BRINGUP.md](docs/BRINGUP.md).
+- adbd on Android 14 needs FunctionFS: init mounts it and sets `android_usb/android0/f_ffs/aliases adb`.
+- Editing WSL files through `\\wsl.localhost\...` from Windows drops the executable bit: `chmod +x` scripts (extract-files.sh, setup-makefiles.sh) afterwards.
+- Full `m droid`: ~2 h from scratch with ccache (121k steps).
+
 ## Our kernel branch `sk1wg` (2026-11-06)
 
 In `~/android/sk1wg/kernel-cm13-sk1wg`, on top of `origin/cm-13.0`; to become a public GitHub fork. Defconfig **`lineageos_sk1wg_defconfig`**, LOCALVERSION `-sk1wg`.
