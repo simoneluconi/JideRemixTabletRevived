@@ -81,5 +81,5 @@ microSD variant: `device-dump/lineage-21-2026-11-07-sdcard/` (same sources, buil
 ## Open questions for the first boot
 
 - Does the bootloader append the boot image's command line? Test: boot the mini recovery with a test `--cmdline` and read `/proc/cmdline`. Our kernel appends what Android needs either way.
-- Does `hwc2on1adapter` accept NVIDIA's HWC version, and does the hwcomposer find `/dev/tegra_dc_*` with the expected ioctls on our kernel (the stock Remix OS hwcomposer ran on the same kernel interface)?
+- NVIDIA's HWC reports version 1.1 on stock (`dumpsys SurfaceFlinger`: "Hardware Composer state (version 01010000)", 1920x1080 at 60 Hz), the minimum `hwc2on1adapter` takes. Still open: does the hwcomposer find `/dev/tegra_dc_*` with the expected ioctls on our kernel (the stock Remix OS hwcomposer ran on the same kernel interface)?
 - First-stage mount with raw `/dev/block/mmcblk1pN` paths (microSD variant).
