@@ -51,6 +51,8 @@ Target **LineageOS 21 directly** (user decision 2026-11-05), on the LineageOS-UL
 - adbd on Android 14 needs FunctionFS: init mounts it and sets `android_usb/android0/f_ffs/aliases adb`.
 - Editing WSL files through `\\wsl.localhost\...` from Windows drops the executable bit: `chmod +x` scripts (extract-files.sh, setup-makefiles.sh) afterwards.
 - Full `m droid`: ~2 h from scratch with ccache (121k steps).
+- `repo sync` leaves `external/chromium-webview/prebuilt/arm/webview.apk` as a Git LFS pointer: `git lfs pull` there, or copy it from the GC tree (same commit, sha256 checked 2026-11-07).
+- Build sets `SELINUX_IGNORE_NEVERALLOWS := true` (as html6405's smdk4412-common): the Treble compat tests trip over LineageOS's su domain.
 
 ## Our kernel branch `sk1wg` (2026-11-06)
 
