@@ -99,6 +99,11 @@ System and system_ext flashed to APP and CAC, userdata formatted, boot only RAM-
 
 | 13 | system_server, LockSettingsService | keystore2: `Cannot check permission without calling_sid`, then `Failed to import secret key` | binder sender security context (upstream ec74136ded79 with its overflow and SG-end follow-ups, as html6405 has them): `FLAT_BINDER_FLAG_TXN_SECURITY_CTX`, `BINDER_SET_CONTEXT_MGR_EXT`, `BR_TRANSACTION_SEC_CTX` |
 
+| 14 | right after boot | black screen with the backlight on; SurfaceFlinger loops on `GetBufferLock timed out ... LockState -1`, system_server's `android.ui` blocked in `SurfaceControl.nativeCreate()`, Watchdog kills system_server every minute | bootanimation is stopped while it holds a buffer's cross-process write lock. `extract-files.sh` patches `NvGrLock()` so a lock still held after the 2 s timeout counts as abandoned (`LockState = 0`, check again) |
+| 15 | first frames after boot | SurfaceFlinger SIGSEGV in `gralloc.tegra.so` (header + 0x70) from `hwcomposer.tegra.so` in `HWC2On1Adapter::Display::present()` | the composer HAL frees a replaced layer buffer while NVIDIA's HWC 1.x still uses it; the mapper keeps the last 4 freed handles registered before releasing them |
+
+**2026-11-07 16:26** (kernel fix13, system fix15): boots to the LineageOS setup wizard; SurfaceFlinger stable, a `screencap` shows the wizard correctly at 1920x1080.
+
 **2026-11-07 16:07: first complete boot** with kernel fix13 and system fix11: `sys.boot_completed=1`, SurfaceFlinger "Boot is finished (40058 ms)", system_server phase 1000, SystemUI started. The boot animation shows but its textures are garbled (the gradient and the three circles are right, the logo and text bitmaps are scrambled), which points at texture uploads rather than composition. adb took a few minutes to come up on that boot. Bluetooth aborts (`bt_hci_ != nullptr`): no BT HAL yet.
 
 Notes:
