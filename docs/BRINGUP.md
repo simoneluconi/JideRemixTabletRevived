@@ -78,8 +78,22 @@ Back to Remix OS: `fastboot flash system`, `fastboot flash boot` with the offici
 
 microSD variant: `device-dump/lineage-21-2026-11-07-sdcard/` (same sources, built with `SK1WG_SDCARD_ROOT=true`; only `boot.img` and `system.img` differ). It needs the card partitioned (p1 >= 1000 MB, p2 >= 800 MB, p3 rest) with the raw images on p1/p2 (`simg2img` first) and an empty ext4 on p3, then only `fastboot boot boot.img`. Still open: the mini recovery has no `fdisk` (left out on purpose), so the card is best prepared on the PC (a reader passed to WSL with `usbipd`) or with a partitioning helper that refuses anything but `mmcblk1`.
 
+## First boots (2026-11-07)
+
+System and system_ext flashed to APP and CAC, userdata formatted, boot only RAM-booted. Each failed boot ends in init's `InitFatalReboot`, a reboot to the bootloader; the log is read with the mini recovery from `/proc/last_kmsg` (saved in `device-dump/test-runs/los21-boot*-last_kmsg.txt`). The kernel's gaps, in the order the boot hit them:
+
+| # | Where | Error | Fix (kernel branch `sk1wg`) |
+|---|---|---|---|
+| 1 | first stage, mounting /system | `failed to realpath(/system): Bad file descriptor` | bionic's `realpath()` `fstat()`s an `O_PATH` fd, allowed only since Linux 3.6: `vfs_fstat()` takes `fget_raw_light()` (upstream 55815f70147d) |
+| 2 | loading SELinux policy | `SELinux: avtab: invalid type or class` | the CM13 tree had switched back to Android M's ioctl whitelisting format; reverted that, so the kernel reads upstream xperms (policy version 30) as Android 7+ writes them |
+| 3 | second stage, `SetupMountNamespaces` | `Cannot open fd for current mount namespace` | `setns()` for mount namespaces and `/proc/<pid>/ns/*` as symlinks with inode numbers (Linux 3.8; roth's picks of 8823c079ba71, 33d6dce60757, bf056bfa8059, 98f842e675f9 and the proc_free_inum fix) |
+| 4 | `SetMmapRndBits` | `Cannot open for reading: /proc/sys/vm/mmap_rnd_bits` | roth's ARCH_MMAP_RND_BITS backport (Linux 4.5); init raises it to 16 bits itself. Also `CONFIG_HW_RANDOM` for prng_seeder's `/dev/hw_random` |
+| 5 | adbd | host sees the device "offline" | the 3.4 f_fs has no AIO: adbd's legacy blocking USB code (`ro.adb.nonblocking_ffs=false`, `sys.usb.ffs.aio_compat 1`; device tree) |
+
+After 4, init gets through early-init: apexd mounts the APEX packages on loop devices (`LOOP_SET_BLOCK_SIZE` fails without consequences), linkerconfig runs, and the tablet stays up with the USB gadget (adb, MTP) enumerated. Not fatal, to look at later: no blkio, memcg or cgroup v2 controllers (`libprocessgroup` warnings), `/acct` read-only, `ueventd.rc` lines with the `net_bt_stack` gid and a 4-field `/sys/` entry.
+
 ## Open questions for the first boot
 
-- Does the bootloader append the boot image's command line? Test: boot the mini recovery with a test `--cmdline` and read `/proc/cmdline`. Our kernel appends what Android needs either way.
+- ~~Does the bootloader append the boot image's command line?~~ Yes, it puts the boot image's command line first (`sk1wg.cmdline_test=1` came out as the first word of `/proc/cmdline`, 2026-11-07).
 - NVIDIA's HWC reports version 1.1 on stock (`dumpsys SurfaceFlinger`: "Hardware Composer state (version 01010000)", 1920x1080 at 60 Hz), the minimum `hwc2on1adapter` takes. Still open: does the hwcomposer find `/dev/tegra_dc_*` with the expected ioctls on our kernel (the stock Remix OS hwcomposer ran on the same kernel interface)?
 - First-stage mount with raw `/dev/block/mmcblk1pN` paths (microSD variant).
