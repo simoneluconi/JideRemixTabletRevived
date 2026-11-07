@@ -76,6 +76,8 @@ Images: `device-dump/lineage-21-2026-11-07/` (`SHA256SUMS` beside them). Battery
 
 Back to Remix OS: `fastboot flash system`, `fastboot flash boot` with the official 2.0.305 images, `fastboot format:ext4 cache`, `fastboot format:ext4 userdata`.
 
+microSD variant: `device-dump/lineage-21-2026-11-07-sdcard/` (same sources, built with `SK1WG_SDCARD_ROOT=true`; only `boot.img` and `system.img` differ). It needs the card partitioned (p1 >= 1000 MB, p2 >= 800 MB, p3 rest) with the raw images on p1/p2 (`simg2img` first) and an empty ext4 on p3, then only `fastboot boot boot.img`. Still open: the mini recovery has no `fdisk` (left out on purpose), so the card is best prepared on the PC (a reader passed to WSL with `usbipd`) or with a partitioning helper that refuses anything but `mmcblk1`.
+
 ## Open questions for the first boot
 
 - Does the bootloader append the boot image's command line? Test: boot the mini recovery with a test `--cmdline` and read `/proc/cmdline`. Our kernel appends what Android needs either way.
