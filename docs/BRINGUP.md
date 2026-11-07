@@ -59,6 +59,23 @@ No repartitioning, ever (the GPT sits behind NVIDIA's BCT/PT area).
 1. **Internal eMMC**: flash APP (`fastboot flash system system.img`) and CAC (`fastboot flash cache system_ext.img`). Remix OS's system comes back with `fastboot flash system system.img` from the official 2.0.305 zip, and CAC is only its cache. But LineageOS needs `/data` formatted, which loses Remix OS's data.
 2. **microSD** (`SK1WG_SDCARD_ROOT=true`): `rootdir/etc/fstab.macallan.sdcard` mounts system, system_ext and data from the card's partitions 1-3. The eMMC is not written at all. The card is partitioned and written from the mini recovery (`mmcblk1` only).
 
+## First boot procedure (internal eMMC)
+
+Images: `device-dump/lineage-21-2026-11-07/` (`SHA256SUMS` beside them). Battery at 50% or more. The bootloader in "Fastboot Protocol" mode (Volume Up + Power, then pick it in the menu).
+
+1. Zero-risk check first: the cmdline test (`fastboot boot device-dump/test-images/mr-cmdline-test/minirecovery.img`, then look for `sk1wg.cmdline_test=1` in `/proc/cmdline`).
+2. Write system and system_ext, then wipe data (loses Remix OS's data):
+   ```
+   fastboot -S 256M flash system system.img
+   fastboot -S 256M flash cache system_ext.img
+   fastboot format:ext4 userdata
+   ```
+   `-S 256M` sends the sparse images in pieces (ours are 1010 and 306 MB; stock's system was 757 MB). `boot` (LNX) is **not** flashed yet.
+3. `fastboot boot boot.img`. The build is userdebug with `WITH_ADB_INSECURE`: adbd starts at boot without the key prompt (USB 0955:7100), so `adb -s <serial> logcat` and `dmesg` work even if the display does not. The first boot compiles apps on the device: several minutes.
+4. Only once it boots: `fastboot flash boot boot.img`.
+
+Back to Remix OS: `fastboot flash system`, `fastboot flash boot` with the official 2.0.305 images, `fastboot format:ext4 cache`, `fastboot format:ext4 userdata`.
+
 ## Open questions for the first boot
 
 - Does the bootloader append the boot image's command line? Test: boot the mini recovery with a test `--cmdline` and read `/proc/cmdline`. Our kernel appends what Android needs either way.
