@@ -154,6 +154,37 @@ Notes:
 
 After 4, init gets through early-init: apexd mounts the APEX packages on loop devices (`LOOP_SET_BLOCK_SIZE` fails without consequences), linkerconfig runs, and the tablet stays up with the USB gadget (adb, MTP) enumerated. Not fatal, to look at later: no blkio, memcg or cgroup v2 controllers (`libprocessgroup` warnings), `/acct` read-only, `ueventd.rc` lines with the `net_bt_stack` gid and a 4-field `/sys/` entry.
 
+## Code review (2026-11-07, fix32)
+
+Three read-only review agents went over our kernel commits, the graphics shims and HALs, and the rest of the device tree. Fixed:
+- **Kernel:**
+  - binder secctx size truncation (a 64-bit `buffers_size` truncated to 32 bits put the security context inside the data area: a forged SID);
+  - ION: handle races (CVE-2016-9120), size overflows, cached-buffer sync, private mmaps;
+  - `sw_keys` probe race;
+  - namespace inode numbers leaked on error paths.
+- **Device tree:**
+  - mapper deferred frees only in SurfaceFlinger and by age;
+  - EGL shim error and GL state handling;
+  - audio speaker/jack switching, capture close and error handling, 48 kHz only;
+  - sensors `batch()` before `activate()`;
+  - ueventd duplicate `/dev/ion` rule and 0777 nodes;
+  - Wi-Fi Direct permission.
+
+Known and left as they are, for now:
+- The gralloc lock-wait patch (0x2846) removes the cross-process buffer lock's mutual exclusion: every contended `NvGrLock()` breaks the lock, and a broken holder's unlock can leave LockState wrong, so later locks break it again. GPU access is still ordered by syncpoint fences; CPU readers/writers of the same buffer could see torn content. The clean fix is to keep NVIDIA's HWC from locking the client-composed layers it never reads.
+- Not seen in practice: after a double `NvGrUnregisterBuffer()` the `bne` refcount patch can leak a buffer.
+- `vendor.powerhal` floors and the actmon tuning race the EMC to its maximum under load: check the battery drain.
+- The sensors wrapper only returns flush-complete events from the next `poll()`; with only an on-change sensor active a flush can wait.
+- No SoftAP: with no Wi-Fi HAL nothing switches bcmdhd to the AP firmware.
+- The headset mic is never selected (`Ext Mic Switch`), so the internal mic always records.
+- Before SELinux enforcing:
+  - the dexopt script (vendor calling `cmd package`) must move to system_ext or be replaced;
+  - new device nodes need types (`/dev/ion`, `/dev/lightsensor`, the PM QoS nodes, `tegra_floor`, the backlight);
+  - this kernel has no SELinux binder hooks at all.
+- Kernel follow-ups:
+  - binder secctx from `proc->cred` instead of the task;
+  - upstream 4ce5d2b1a8fd (ns-file bind mounts across mount namespaces).
+
 ## Open questions for the first boot
 
 - ~~Does the bootloader append the boot image's command line?~~ Yes, it puts the boot image's command line first (`sk1wg.cmdline_test=1` came out as the first word of `/proc/cmdline`, 2026-11-07).
