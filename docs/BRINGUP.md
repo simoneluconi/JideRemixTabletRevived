@@ -114,6 +114,12 @@ System and system_ext flashed to APP and CAC, userdata formatted, boot only RAM-
 - The BCM43341 is 2.4 GHz only (stock never saw a 5 GHz network either).
 - No serial console: the bootloader's `console=ttyS0,115200n8` made every kernel message a synchronous UART write; the kernel no longer has `SERIAL_8250_CONSOLE`, the boot command line adds `loglevel=4`, and init stops the debuggable builds' `console` shell (and its notification).
 
+## Audio, backlight, sensors (2026-11-07, fix22)
+
+- Audio: `audio/` is the emulator's tinyalsa-based HIDL 7.1 HAL (`device/generic/goldfish/audio`) renamed `*.sk1wg`, on ALSA card 1 (`tegraaic325x`; card 0 is the HDMI HDA), with stock's `nvaudio_conf.xml` routing applied when a stream opens (speaker: `LOL/LOR Output Mixer`, `Int Spk Switch`, `Speaker Playback Volume` 0x22; headphone: `HPL/HPR Output Mixer`, `Headphone Jack Switch`; mic: `Mic_Bias_Power_ctrl`, `Int Mic Switch`). Speaker and headphone are both on for now. The first builds had **no audio policy configuration**: every stream's volume range was 0..0, so the volume keys only showed the slider at zero. Stock's NVIDIA audio HAL was not used (it links Android 5.1's libmedia).
+- Backlight: `lights/` is a small AIDL Lights HAL writing `/sys/class/backlight/pwm-backlight/brightness`. Without it the backlight also stayed on when the screen went to sleep.
+- Sensors: stock's Invensense HAL (`sensors.macallan.so` and its MPL libraries) is device API 0.1, and `android.hardware.sensors@1.0-impl` aborts below 1.3 ("getHalDeviceVersion()=0"), which kept the boot from completing. `sensors/sensors_wrapper.c` (`sensors.sk1wg`, selected with `ro.hardware.sensors=sk1wg`) presents it as 1.3: `batch()` becomes `setDelay()`, `flush()` queues the flush-complete event. All 8 hardware sensors are listed.
+
 Performance notes for later: cpuquiet keeps cpu1-3 offline at idle (governor "runnable"), the GPU (gbus) idles at 102 MHz, and there is no power HAL (stock had only `power.default`).
 
 **2026-11-07 16:07: first complete boot** with kernel fix13 and system fix11: `sys.boot_completed=1`, SurfaceFlinger "Boot is finished (40058 ms)", system_server phase 1000, SystemUI started. The boot animation shows but its textures are garbled (the gradient and the three circles are right, the logo and text bitmaps are scrambled), which points at texture uploads rather than composition. adb took a few minutes to come up on that boot. Bluetooth aborts (`bt_hci_ != nullptr`): no BT HAL yet.
