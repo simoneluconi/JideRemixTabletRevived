@@ -44,20 +44,20 @@ No repartitioning, ever (the GPT sits behind NVIDIA's BCT/PT area).
 | GPT | LineageOS use | Size |
 |---|---|---|
 | LNX | boot | 8 MB |
-| APP | system | 1000 MB |
-| CAC | vendor (stock `/cache`, not needed by LineageOS) | 768 MB |
+| APP | system, with vendor inside (`/system/vendor`, `/vendor` a symlink) | 1000 MB |
+| CAC | system_ext (stock `/cache`, not needed by LineageOS) | 768 MB |
 | UDA | data | ~56 GB |
 | SOS | stock Remix OS recovery, untouched | 8 MB |
 | MSC | misc | 2 MB |
 | USP, MDA, DTB, BMP, LBP, CHG, FBP, FCG | never written | |
 
-**System size**: the Galaxy Camera's LOS21 system is 1120 MB (APEX 277, system_ext 220, product 147, app dexpreopt 57). For 1000 MB the sk1wg build uses `common_mini_tablet_wifionly`, preoptimises only the boot image and system_server, and drops phone, camera, updater and theme packages (`RemovePackages`). Fallback if it still does not fit: put `system_ext` on its own partition instead of vendor-on-CAC.
+**System size**: the Galaxy Camera's LOS21 system is 1120 MB (APEX 277, system_ext 220, product 147, app dexpreopt 57). For 1000 MB the sk1wg build uses `common_mini_tablet_wifionly`, preoptimises only the boot image and system_server, and drops phone, camera, updater and theme packages (`RemovePackages`). That still made 1210 MB (2026-11-07: system_ext 291, APEX 260, product 185 with WebView 90, framework 151, fonts 79), while the vendor files are only 33 MB. So system_ext went to CAC and vendor into system. The linker resolves its `dir.*` paths with `realpath`, so `/system/vendor` binaries still get the vendor namespace; the shims are matched on realpaths, hence the `/system/vendor/...` entries in `TARGET_LD_SHIM_LIBS`.
 
 ## Testing without touching Remix OS
 
 `fastboot boot` only loads the kernel and ramdisk. For a full LineageOS boot there are two ways:
-1. **Internal eMMC**: flash APP (system) and CAC (vendor). Remix OS's system comes back with `fastboot flash system system.img` from the official 2.0.305 zip, and CAC is only its cache. But LineageOS needs `/data` formatted, which loses Remix OS's data.
-2. **microSD** (`SK1WG_SDCARD_ROOT=true`): `rootdir/etc/fstab.macallan.sdcard` mounts system, vendor and data from the card's partitions 1-3. The eMMC is not written at all. The card is partitioned and written from the mini recovery (`mmcblk1` only).
+1. **Internal eMMC**: flash APP (`fastboot flash system system.img`) and CAC (`fastboot flash cache system_ext.img`). Remix OS's system comes back with `fastboot flash system system.img` from the official 2.0.305 zip, and CAC is only its cache. But LineageOS needs `/data` formatted, which loses Remix OS's data.
+2. **microSD** (`SK1WG_SDCARD_ROOT=true`): `rootdir/etc/fstab.macallan.sdcard` mounts system, system_ext and data from the card's partitions 1-3. The eMMC is not written at all. The card is partitioned and written from the mini recovery (`mmcblk1` only).
 
 ## Open questions for the first boot
 
