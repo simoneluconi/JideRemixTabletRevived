@@ -89,6 +89,16 @@ System and system_ext flashed to APP and CAC, userdata formatted, boot only RAM-
 | 3 | second stage, `SetupMountNamespaces` | `Cannot open fd for current mount namespace` | `setns()` for mount namespaces and `/proc/<pid>/ns/*` as symlinks with inode numbers (Linux 3.8; roth's picks of 8823c079ba71, 33d6dce60757, bf056bfa8059, 98f842e675f9 and the proc_free_inum fix) |
 | 4 | `SetMmapRndBits` | `Cannot open for reading: /proc/sys/vm/mmap_rnd_bits` | roth's ARCH_MMAP_RND_BITS backport (Linux 4.5); init raises it to 16 bits itself. Also `CONFIG_HW_RANDOM` for prng_seeder's `/dev/hw_random` |
 | 5 | adbd | host sees the device "offline" | the 3.4 f_fs has no AIO: adbd's legacy blocking USB code (`ro.adb.nonblocking_ffs=false`, `sys.usb.ffs.aio_compat 1`; device tree) |
+| 6 | SurfaceFlinger, Skia RenderEngine | `Failed to create a valid texture` in `primeShaderCache` | `debug.renderengine.backend=gles` (device tree, as smdk4412-common) |
+| 7 | GLES RenderEngine | every shader fails to compile, empty info log | `libcgdrv.so` (NVIDIA's GLSL compiler, dlopen()ed by `libGLESv2_tegra_impl.so`) was missing from `proprietary-files.txt` |
+| 8 | any process death | `binder: unknown command 0`, servicemanager and hwservicemanager abort | `BC_DEAD_BINDER_DONE` skipped `sizeof(void *)` (4) instead of the 8-byte cookie (kernel) |
+
+Still open after 8 (2026-11-07 15:20):
+- SurfaceFlinger crashes (SIGSEGV at 0x10001) inside `libGLESv2_tegra_impl.so` from `glGetShaderiv()` while `ProgramCache::primeCache()` compiles its first shader. Before `libcgdrv.so` the compile failed cleanly. The driver also has a shader cache under `/data/data/%s/cache` (`NV_SHADER_CACHE`).
+- RenderEngine's placeholder EGLImage fails with `EGL_BAD_ALLOC`, and bootanimation crashes in `NvGrLock()` (gralloc) from `eglCreateWindowSurface()`: buffers allocated by the allocator HAL in another process may not be what NVIDIA's 5.1 gralloc/EGL expect.
+- system_server: `There must be exactly one permissions manager; found []`. apexd's `realpath()` fails with ENOENT for every pre-installed APEX when system_server asks for them (`getAllPackages`), about 45 s after the same process resolved them fine at boot, so PackageManager never scans the APEX apps.
+- After a while USB drops to MTP only (0955:7102) and adb disappears. The `mtp` + `ro.debuggable` rule in `init.macallan.usb.rc` did not keep it; cause not found yet.
+- The persisted logcat (`/data/misc/logd`) survives a forced power-off only up to its last rotation; read it from the mini recovery with `rootrun` (mount UDA read-only).
 
 After 4, init gets through early-init: apexd mounts the APEX packages on loop devices (`LOOP_SET_BLOCK_SIZE` fails without consequences), linkerconfig runs, and the tablet stays up with the USB gadget (adb, MTP) enumerated. Not fatal, to look at later: no blkio, memcg or cgroup v2 controllers (`libprocessgroup` warnings), `/acct` read-only, `ueventd.rc` lines with the `net_bt_stack` gid and a 4-field `/sys/` entry.
 
