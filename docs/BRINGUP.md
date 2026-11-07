@@ -97,7 +97,9 @@ System and system_ext flashed to APP and CAC, userdata formatted, boot only RAM-
 | 11 | bootanimation, `eglCreateWindowSurface` | SIGSEGV in `NvGrLock()` at header page + 0x48; RenderEngine `EGL_BAD_ALLOC` | NVIDIA's gralloc keeps the allocating pid in the handle (offset 0x14) and skips the mapping for "its own" buffers; Android 14 imports a clone in the allocating process and frees the original. The mapper clears that pid on its clone (`interfaces/mapper/Gralloc0Mapper.cpp`) |
 | 12 | system_server, AlarmManager | `kernel does not support timerfd_create() with alarm timers` | timerfd alarm clocks and CLOCK_BOOTTIME (html6405's picks of 11ffa9d6065f, 4a2378a943f0) plus the alarmtimer helpers they need, written for 3.4's per-base timer |
 
-After 12 (2026-11-07 15:53) SurfaceFlinger and bootanimation run without crashing.
+| 13 | system_server, LockSettingsService | keystore2: `Cannot check permission without calling_sid`, then `Failed to import secret key` | binder sender security context (upstream ec74136ded79 with its overflow and SG-end follow-ups, as html6405 has them): `FLAT_BINDER_FLAG_TXN_SECURITY_CTX`, `BINDER_SET_CONTEXT_MGR_EXT`, `BR_TRANSACTION_SEC_CTX` |
+
+**2026-11-07 16:07: first complete boot** with kernel fix13 and system fix11: `sys.boot_completed=1`, SurfaceFlinger "Boot is finished (40058 ms)", system_server phase 1000, SystemUI started. The boot animation shows but its textures are garbled (the gradient and the three circles are right, the logo and text bitmaps are scrambled), which points at texture uploads rather than composition. adb took a few minutes to come up on that boot. Bluetooth aborts (`bt_hci_ != nullptr`): no BT HAL yet.
 
 Notes:
 - Earlier, USB dropped to MTP only (0955:7102) and adb disappeared while Android was crash-looping; not seen since the binder fix (8).
