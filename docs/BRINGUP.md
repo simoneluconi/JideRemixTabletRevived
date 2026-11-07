@@ -102,7 +102,17 @@ System and system_ext flashed to APP and CAC, userdata formatted, boot only RAM-
 | 14 | right after boot | black screen with the backlight on; SurfaceFlinger loops on `GetBufferLock timed out ... LockState -1`, system_server's `android.ui` blocked in `SurfaceControl.nativeCreate()`, Watchdog kills system_server every minute | bootanimation is stopped while it holds a buffer's cross-process write lock. `extract-files.sh` patches `NvGrLock()` so a lock still held after the 2 s timeout counts as abandoned (`LockState = 0`, check again) |
 | 15 | first frames after boot | SurfaceFlinger SIGSEGV in `gralloc.tegra.so` (header + 0x70) from `hwcomposer.tegra.so` in `HWC2On1Adapter::Display::present()` | the composer HAL frees a replaced layer buffer while NVIDIA's HWC 1.x still uses it; the mapper keeps the last 4 freed handles registered before releasing them |
 
+| 16 | theme change | SurfaceFlinger abort "pthread_mutex_destroy called on a destroyed mutex" from `hwcomposer.tegra.so` freeing its scratch buffers | `NvGrUnregisterBuffer()` tore a buffer down whenever the previous refcount was <= 1; patched to == 1 (`bgt` -> `bne` at 0x26fe) |
+
 **2026-11-07 16:26** (kernel fix13, system fix15): boots to the LineageOS setup wizard; SurfaceFlinger stable, a `screencap` shows the wizard correctly at 1920x1080.
+
+## Wi-Fi and Bluetooth (2026-11-07, fix19)
+
+- Wi-Fi: bcmdhd built in as module `bcm43341` (parameters under `/sys/module/bcm43341/parameters/`), firmware and NVRAM in `/vendor`. **No vendor Wi-Fi HAL**: this bcmdhd has no nl80211 vendor commands (no `wl_cfgvendor.c`), so `libwifi-hal-bcm` fails "set hal start" and LineageOS's legacy HAL crashed; the AIDL HAL of this tree does not even build against libhardware_legacy's `wifi_hal.h`. Without a HAL the framework drives `wlan0` with wificond and wpa_supplicant (`lib_driver_cmd_bcmdhd`), with stock's overlays (`disable_scan_offload=1`, `p2p_disabled=1`). Scans work. The MAC is NVRAM's placeholder 00:90:4c:11:22:33 (stock had a different one); Android randomises per network anyway.
+- Bluetooth: AOSP's Broadcom `libbt-vendor` on `/dev/ttyHS2` (`configs/bluetooth/vnd_sk1wg.txt`), HIDL 1.0 HAL declared in `manifest.xml`. The chip has no address and the HAL aborts without one: `init.sk1wg.bdaddr.sh` makes a random locally administered address on the first boot in `/data/vendor/bluetooth/bdaddr` (`ro.bt.bdaddr_path`). Turns on.
+- No serial console: the bootloader's `console=ttyS0,115200n8` made every kernel message a synchronous UART write; the kernel no longer has `SERIAL_8250_CONSOLE`, the boot command line adds `loglevel=4`, and init stops the debuggable builds' `console` shell (and its notification).
+
+Performance notes for later: cpuquiet keeps cpu1-3 offline at idle (governor "runnable"), the GPU (gbus) idles at 102 MHz, and there is no power HAL (stock had only `power.default`).
 
 **2026-11-07 16:07: first complete boot** with kernel fix13 and system fix11: `sys.boot_completed=1`, SurfaceFlinger "Boot is finished (40058 ms)", system_server phase 1000, SystemUI started. The boot animation shows but its textures are garbled (the gradient and the three circles are right, the logo and text bitmaps are scrambled), which points at texture uploads rather than composition. adb took a few minutes to come up on that boot. Bluetooth aborts (`bt_hci_ != nullptr`): no BT HAL yet.
 
