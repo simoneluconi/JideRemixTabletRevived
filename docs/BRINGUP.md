@@ -191,6 +191,21 @@ Known and left as they are, for now:
   - binder secctx from `proc->cred` instead of the task;
   - upstream 4ce5d2b1a8fd (ns-file bind mounts across mount namespaces).
 
+## Stress test (2026-11-08, fix32 system)
+
+52 minutes of CPU, memory, storage, UI, screen off/on and media load. No reboot, panic, WARN/BUG, tombstone, ANR or crash, and system_server, surfaceflinger and the media processes kept their pids.
+
+- **ION leak, fixed in fix33** (kernel "ion: hand userspace handle ids, not kernel addresses"): each audio playback kept 512 KiB in both media.swcodec's and mediaserver's ION clients for good. The 3.4 core handed userspace the handle's kernel address, negative as libion's `int` handle, and C2AllocatorIon only calls `ion_free()` on handles >= 0. Handles are now small ids in a per-client idr, as upstream since 3.10. Verified on fix33: 512 KiB during a playback, 0 after it and after 10 playbacks.
+- Thermal: 4 busy cores reach the 90 °C passive trip in about 95 s at the 1606.5 MHz EDP cap; sustained 2-thread load sits at 76-86 °C without frequency throttling, and cpuquiet keeps all 4 cores online. `therm_est` (skin estimate) reads 16-30 °C while the CPU is at 90 °C, so the skin cooling device never engages. To compare with the stock kernel.
+- Memory: no zram; one WebView renderer reached 665 MB PSS with about 20 tabs, the lowmemorykiller then killed cached apps and launches took 3-6.6 s. zram is the obvious next step. No memtrack: dumpsys shows "Graphics: 0" (nvmap holds 100-170 MB for the launcher).
+- Storage (/data): 42 MB/s write with fsync, 117 MB/s read, no mmc errors.
+- Flings: Settings 6-12 % janky (p90 22-27 ms), WebView pages about 35 fps (19 % janky).
+- Screen off/on, 20 cycles: the display came back every time. 2 of 20 wakes logged the SN65DSI86 bridge's `link training write error` (no retry in the driver), each wake logs 8 i2c NAKs from the bridge at 0x2c, and the dock keyboard re-enumerates on every off/on.
+- Log noise: servicemanager's BINDER_GET_NODE_INFO_FOR_REF and every process's BINDER_ENABLE_ONEWAY_SPAM_DETECTION return -EINVAL and are logged; together with healthd they cut the dmesg window to about 35 minutes.
+- Minor: order-5 allocation failures in seq_read (nvmap debugfs), NetworkStats `Null bpf map` WTFs on every foreground change (no eBPF), libprocessgroup cannot create `/sys/fs/cgroup/uid_N`, battery temperature reads 0.0.
+
+The release mini recovery (our kernel, 2026-11-08) was RAM-booted: adb, `su`, `rootrun`, `backup-critical` (106 MB into RAM) and `rootrun reboot-to bootloader` work.
+
 ## Open questions for the first boot
 
 - ~~Does the bootloader append the boot image's command line?~~ Yes, it puts the boot image's command line first (`sk1wg.cmdline_test=1` came out as the first word of `/proc/cmdline`, 2026-11-07).
