@@ -22,7 +22,7 @@ There are no Google services: the system is LineageOS's "mini" Wi-Fi tablet set,
 | Touch | Works (FocalTech FT5x06). No double tap to wake: the controller ignores it |
 | Smoothness | Smooth scrolling once the everyday apps are compiled, which happens on the device after the first boot |
 | Wi-Fi | Works, 2.4 GHz only (the BCM43341 has no 5 GHz). No hotspot, no Wi-Fi Direct |
-| Bluetooth | Turns on. The chip has no address of its own, so the first boot makes a random one |
+| Bluetooth | Works: Bluetooth headphones play through A2DP (AAC/SBC, encoded in software). The chip has no address of its own, so the first boot makes a random one |
 | Audio | Speaker, headphones and the internal microphone work. A headset microphone is never selected |
 | Media playback | Works through Android's Codec2 software codecs. NVIDIA's hardware video decoders are not used (they need Android 5.1 libraries) |
 | Web browser and WebView apps | Work on the GPU through ANGLE |
