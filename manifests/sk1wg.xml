@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Jide Remix Ultra Tablet (sk1wg) bring-up on top of LineageOS-UL 21.
-     The device tree and kernel are local for now (device/jide/sk1wg,
-     kernel/jide/sk1wg). The legacy-kernel fixes below are the ones made for
-     Galaxy Camera Revived (branch gd1 of the simoneluconi forks): none of
-     them is specific to the Galaxy Camera. -->
+     Use it with zz-lineage-snapshot.xml (docs/TECHNICAL.md). The
+     legacy-kernel fixes below are the ones made for Galaxy Camera Revived
+     (branch gd1 of the simoneluconi forks): none of them is specific to the
+     Galaxy Camera. -->
 <manifest>
   <remote name="html6405" fetch="https://github.com/html6405" />
   <remote name="simoneluconi" fetch="https://github.com/simoneluconi" />
+
+  <!-- The device tree and the kernel are not published yet: clone them by
+       hand into device/jide/sk1wg (branch lineage-21.0) and
+       kernel/jide/sk1wg (branch sk1wg). Once they are on GitHub, add them
+       here, for example:
+  <project path="device/jide/sk1wg" name="android_device_jide_sk1wg" remote="simoneluconi" revision="lineage-21.0" />
+  <project path="kernel/jide/sk1wg" name="android_kernel_jide_sk1wg" remote="simoneluconi" revision="sk1wg" />
+  -->
 
   <!-- LineageOS-UL dropped vendor.lineage.power@1.0; html6405's fork keeps it -->
   <remove-project name="LineageOS-UL/android_hardware_lineage_interfaces" />

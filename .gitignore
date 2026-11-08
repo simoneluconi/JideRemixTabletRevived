@@ -18,6 +18,20 @@
 getprop*.txt
 wifi.txt
 fastboot-getvar*.txt
+# A mini recovery backup pulled into the repo (backup-critical's cmdline.txt
+# carries the serial and the otf_key), and device logs, which carry the serial
+/backup/
+cmdline*.txt
+emmc.txt
+last_kmsg*
+dmesg*.txt
+logcat*.txt
+*.log
+# Kernels and ramdisks unpacked from stock images
+zImage
+*.cpio
+*.cpio.gz
+*.raw.gz
 # Developer adb keys (they would be baked into builds)
 adb_keys
 adbkey
