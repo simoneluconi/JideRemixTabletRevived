@@ -105,7 +105,7 @@ Our kernel also boots the stock Remix OS (a regression test for the kernel), but
 - `reboot-to bootloader|recovery`: the kernel knows only `recovery`, `bootloader` and `forced-recovery`. **Never use `forced-recovery`** (APX mode).
 - No `fdisk`, on purpose.
 
-Build it with `tools/build-minirecovery.sh <stock boot.img> <stock recovery.img> <busybox static ARM> <su static ARM> <out dir>` and `REBOOT_TO=<static ARM reboot-to>`. The static helpers (`minirecovery/su.c`, `minirecovery/reboot-to.c`) are built in an Alpine `linux/arm/v7` container. **The output contains Jide's binaries** (the stock kernel and adbd), so it is never committed.
+Build it with `tools/build-minirecovery.sh <stock boot.img> <stock recovery.img> <busybox static ARM> <su static ARM> <out dir>` and `REBOOT_TO=<static ARM reboot-to>`. The static helpers (`minirecovery/su.c`, `minirecovery/reboot-to.c`) are built in an Alpine `linux/arm/v7` container. Built images are not committed; they are meant for the GitHub releases. A released image is built with `KERNEL=<our zImage>`, so that every binary in it has public source: our kernel (GPL-2.0), busybox (GPL-2.0), our `su` and `reboot-to`, and the stock adbd, which is AOSP's Apache-2.0 code as built by Jide.
 
 Other tools: `tools/unpackboot.py` (unpack a v0 boot image), `tools/simg2img.py` (sparse to raw), `tools/busybox-applets.sh` (list an ARM busybox's applets without running it).
 

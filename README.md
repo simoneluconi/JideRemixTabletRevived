@@ -7,7 +7,7 @@ A custom ROM that brings Android 14 (LineageOS 21) to the **Jide Remix Ultra Tab
 | Remix Ultra Tablet **REMIX SK1WG** (Wi-Fi, 2 GB / 64 GB) | In development, see below |
 | Other Remix devices (Remix Mini, Remix Pro, ...) | Not supported |
 
-Jide closed down, and the last firmware it shipped is Remix OS 2.0.305 (Android 5.1.1, June 2016). The tablet still works, but it is very slow (Remix OS and Google Play services on 2 GB of RAM and an old eMMC) and nothing on it gets security updates any more. This project puts a clean, lightweight Android on it, with the hardware that makes the tablet useful: the 1920x1080 screen with GPU acceleration, touch, Wi-Fi, Bluetooth, audio, sensors and the keyboard cover.
+Jide left the consumer market in July 2017 and ended Remix OS, and the last firmware it shipped is Remix OS 2.0.305 (Android 5.1.1, June 2016). The tablet still works, but it is very slow (Remix OS and Google Play services on 2 GB of RAM and an old eMMC) and nothing on it gets security updates any more. This project puts a clean, lightweight Android on it, with the hardware that makes the tablet useful: the 1920x1080 screen with GPU acceleration, touch, Wi-Fi, Bluetooth, audio, sensors and the keyboard cover.
 
 There are no Google services: the system is LineageOS's "mini" Wi-Fi tablet set, and the stock 1000 MB system partition is kept as it is.
 

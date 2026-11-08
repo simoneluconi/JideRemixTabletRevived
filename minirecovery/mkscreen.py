@@ -18,7 +18,7 @@ MONO = '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf'
 W, H = 1920, 1080
 
 LINES = [
-    ('text', 'Runs from RAM only: nothing on the tablet has been changed.'),
+    ('text', 'Runs from RAM only and writes nothing to the tablet by itself.'),
     ('gap', None),
     ('text', 'Connect USB and use adb:'),
     ('mono', 'adb shell rootrun <command>      run a command as root'),
@@ -26,7 +26,8 @@ LINES = [
     ('mono', 'adb shell rootrun reboot-to bootloader'),
     ('gap', None),
     ('text', 'Without a computer: hold Power for 15 seconds to switch off.'),
-    ('text', 'The next start is Remix OS, as usual.'),
+    ('text', 'The next start boots the system installed on the tablet'),
+    ('text', '(Remix OS or LineageOS), as usual.'),
 ]
 
 

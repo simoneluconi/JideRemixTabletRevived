@@ -29,7 +29,7 @@ Private serials and local setup: @CLAUDE.local.md
 - **Bootloader (2026-11-05)**: `version-bootloader 1.0`, product `Macallan`, **`unlocked: yes`, `secure: no`**. No unlock step needed, and unsigned images boot. Use `fastboot boot <img>` (RAM only, writes nothing) for every first test of a new kernel or recovery.
 - **GPT** (by-name): SOS=p1 (recovery, starts at sector 45056), DTB=p2, LNX=p3 (boot), APP=p4, CAC=p5, MSC=p6, USP=p7, MDA=p8, BMP=p9, LBP=p10, CHG=p11, FBP=p12, FCG=p13 (boot logo/charger pictures), UDA=p14.
 - **Fastboot partition names**: bootloader (6 MB), recovery (8 MB), boot (8 MB), **dtb** (4 MB), system (1000 MB), cache (768 MB), userdata (~56 GB). Full output: `device-dump/stock-2.0.305/runtime/fastboot-getvar-all.txt`.
-- **Updates** only ever contained boot.img, recovery.img and system.img (no bootloader). XDA users reflashed 1.5 via fastboot and installed CWM, so the bootloader is fastboot-capable; unlock state not yet verified on this unit.
+- **Updates** only ever contained boot.img, recovery.img and system.img (no bootloader). XDA users reflashed 1.5 via fastboot and installed CWM, so the bootloader is fastboot-capable (this unit: unlocked, see Bootloader above).
 
 ## Plan
 
