@@ -108,7 +108,7 @@ Repositories:
 - this one: docs, `manifests/`, `tools/` and the mini recovery sources (`minirecovery/`);
 - the device tree: [android_device_jide_sk1wg](https://github.com/simoneluconi/android_device_jide_sk1wg) (branch `lineage-21.0`), at `device/jide/sk1wg`;
 - the kernel: [android_kernel_jide_sk1wg](https://github.com/simoneluconi/android_kernel_jide_sk1wg) (branch `sk1wg`), a fork of TerenceWSK's community CM13 kernel for this tablet;
-- frameworks/base: branch `sk1wg` of [android_frameworks_base](https://github.com/simoneluconi/android_frameworks_base/tree/sk1wg) (the Galaxy Camera's `gd1` plus a boot animation fix).
+- frameworks/base: branch `sk1wg` of [android_frameworks_base](https://github.com/simoneluconi/android_frameworks_base/tree/sk1wg) (the Galaxy Camera's `gd1` plus a boot animation fix and the charging animation for the tablet's two connectors).
 
 Related: [Galaxy Camera Revived](https://github.com/simoneluconi/GalaxyCameraRevived), the sibling project (LineageOS 21 on the Samsung Galaxy Camera). Its fixes for old 3.4 kernels in bionic, system/core, adb, unwinding, the frameworks and the launcher are used here as they are.
 
