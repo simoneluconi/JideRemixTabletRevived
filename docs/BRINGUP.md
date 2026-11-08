@@ -224,6 +224,11 @@ Found after the first release: a site with CSS `backdrop-filter: blur()` cards s
 - Other effects, scrolling (median / 90th percentile ms): box-shadow 19/36, CSS `filter: blur()` on images 17/30, gradients 21/29, images with rounded corners 22/36, mix-blend-mode 16/34, 3D transforms 23/34, long text 14-25/23-32, CSS animations 18/28 idle and 34/46 while scrolling, a 2D canvas animation 21/32 (18 % janky), a sticky header with `backdrop-filter` 40/53 (the blur's GPU cost again).
 - Not a tablet problem: links to GitHub "did nothing" in Jelly because github.com answered 503 at that moment (also from the PC).
 
+## Auto-rotation and the charging ripple (2026-11-08)
+
+- **Auto-rotation stopped after the first suspend.** The accelerometer worked and the window manager's `AccelSensorJudge` predicted the right rotation (`mPredictedRotation=1`), but never proposed it (`mProposedRotation=-1`). It refuses a rotation until 500 ms after the last touch, and compares the sensor event's timestamp with the touch time from `SystemClock.elapsedRealtimeNanos()` (`CLOCK_BOOTTIME`). The stock Invensense HAL stamps its events with `CLOCK_MONOTONIC` (5265 s against 5290 s in `/proc/timer_list` and 9241 s of `/proc/uptime`, read together), which falls behind by every second of suspend: after about an hour asleep, any touch blocked rotation for an hour. Before the first suspend the two clocks agree, so it worked in short tests. `sensors/sensors_wrapper.c` now adds `CLOCK_BOOTTIME - CLOCK_MONOTONIC` to every sensor event, as Android requires of all sensor timestamps (this also fixes apps that compare them with `elapsedRealtimeNanos()`). The offset is kept unless it moves by more than 1 ms, so the clock-read gap does not jitter the timestamps.
+- **Charging ripple**: SystemUI starts it at `physical_charger_port_location_normalized_x/y` in the natural orientation (default bottom centre). The connector is on the upper part of the right edge (landscape, cover keyboard below): the device overlay sets x 1, y 0.15. `adb shell cmd statusbar charging-ripple` plays it without plugging in.
+
 ## Open questions for the first boot
 
 - ~~Does the bootloader append the boot image's command line?~~ Yes, it puts the boot image's command line first (`sk1wg.cmdline_test=1` came out as the first word of `/proc/cmdline`, 2026-11-07).
