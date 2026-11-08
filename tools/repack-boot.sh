@@ -17,10 +17,13 @@ max_size=8388608    # LNX and SOS are both 8 MB
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
-python3 "$here/tools/unpackboot.py" "$img" "$work/u" > /dev/null
+python3 "$here/tools/unpackboot.py" "$img" "$work/u" > "$work/header.txt"
+# Keep the image's command line (stock's is empty, LineageOS's is not)
+cmdline=$(sed -n 's/^cmdline=//p' "$work/header.txt")
 
 python3 "$mkbootimg" --header_version 0 \
     --kernel "$zimage" --ramdisk "$work/u/ramdisk.cpio.gz" \
+    --cmdline "$cmdline" \
     --base 0x10000000 --pagesize 2048 \
     --kernel_offset 0x00008000 --ramdisk_offset 0x01000000 \
     --second_offset 0x00f00000 --tags_offset 0x00000100 \
