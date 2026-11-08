@@ -25,7 +25,7 @@ There are no Google services: the system is LineageOS's "mini" Wi-Fi tablet set,
 | Bluetooth | Works: Bluetooth headphones play through A2DP (AAC/SBC, encoded in software). The chip has no address of its own, so the first boot makes a random one |
 | Audio | Speaker, wired headphones (the speaker switches off while they are plugged in) and the internal microphone work. A headset microphone is never selected |
 | Media playback | Works through Android's Codec2 software codecs. NVIDIA's hardware video decoders are not used (they need Android 5.1 libraries) |
-| Web browser and WebView apps | Work on the GPU through ANGLE |
+| Web browser and WebView apps | Work on the GPU through ANGLE, with WebGL 1 (no WebGL 2: the GPU is OpenGL ES 2.0). Pages that blur what is behind them (CSS `backdrop-filter`) scroll slowly: the Tegra 4 GPU takes 40-100 ms per frame on them |
 | Sensors | Accelerometer, gyroscope, compass and light sensor are listed. Adaptive brightness works |
 | Backlight | Works, off when the screen sleeps |
 | Keyboard cover | Closing the cover puts the tablet to sleep; opening it does not wake it (the power key does). The keyboard and touchpad work (plain USB HID) |
