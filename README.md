@@ -26,7 +26,7 @@ There are no Google services: the system is LineageOS's "mini" Wi-Fi tablet set,
 | Audio | Speaker, headphones and the internal microphone work. A headset microphone is never selected |
 | Media playback | Works through Android's Codec2 software codecs. NVIDIA's hardware video decoders are not used (they need Android 5.1 libraries) |
 | Web browser and WebView apps | Work on the GPU through ANGLE |
-| Sensors | Accelerometer, gyroscope, compass and light sensor are listed. Adaptive brightness is on, still to be checked in daylight |
+| Sensors | Accelerometer, gyroscope, compass and light sensor are listed. Adaptive brightness works |
 | Backlight | Works, off when the screen sleeps |
 | Keyboard cover | Closing the cover puts the tablet to sleep; opening it does not wake it (the power key does). The keyboard and touchpad are plain USB HID devices |
 | Camera | **Not working yet**: the stock camera driver needs Android 5.1 libraries. A V4L2 port is planned |
