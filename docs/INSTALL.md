@@ -1,6 +1,6 @@
-# Testing Jide Remix Tablet Revived (and going back to Remix OS)
+# Installing Jide Remix Tablet Revived (and going back to Remix OS)
 
-There are no public builds yet. This guide is for developers and testers who build the system themselves ([TECHNICAL.md](TECHNICAL.md)) and want to run it on a REMIX SK1WG. Read it once from start to end before touching the tablet.
+For a normal install, the README's [Install](../README.md#install) section is enough. This guide adds the details: the safety rules, the Windows driver, a full backup of the tablet's own partitions (for developers), test builds, and the way back to Remix OS. Read it once from start to end before touching the tablet.
 
 ## 1. The safety rules
 
@@ -20,7 +20,7 @@ The tablet can be brought back to Remix OS with fastboot in almost every case. T
 - A PC with Android's [platform-tools](https://developer.android.com/tools/releases/platform-tools) (`fastboot`, `adb`).
 - On Windows, Google's USB driver. The bootloader enumerates as USB `0955:7000`; install the driver for it as "Android Bootloader Interface" with "Have Disk" in Device Manager. If another vendor's Android driver is installed, the device may show up under that vendor's device class: that is fine.
 - **Jide's official Remix OS 2.0.305 images** (`boot.img`, `recovery.img`, `system.img`), kept safe before you start: they are your way back. Jide's updates only ever contained these three images.
-- Your own build ([TECHNICAL.md](TECHNICAL.md)): `boot.img`, `system.img`, `system_ext.img`, and the mini recovery image.
+- A release from [Releases](https://github.com/simoneluconi/JideRemixTabletRevived/releases) (`...-sk1wg-images.zip`: `boot.img`, `system.img`, `system_ext.img`), or your own build ([TECHNICAL.md](TECHNICAL.md)). The mini recovery image is a separate download.
 
 ## 3. Reach the bootloader (no flashing yet)
 
@@ -38,7 +38,9 @@ After a software reboot into the bootloader (from the mini recovery, or when a f
 
 Leave the bootloader with `fastboot reboot`.
 
-## 4. Back up the tablet's own partitions
+## 4. Back up the tablet's own partitions (optional)
+
+Not needed for an install: it only writes boot, system, cache and userdata, which Jide's official images restore. This full copy of everything else is for developers who will experiment with the tablet beyond that.
 
 The mini recovery ([TECHNICAL.md](TECHNICAL.md#4-the-mini-recovery)) runs from RAM and only reads the eMMC.
 
@@ -53,27 +55,29 @@ adb pull /tmp/backup
 
 Leave the mini recovery with `adb shell rootrun reboot-to bootloader` (or hold Power to switch off).
 
-## 5. Install the test build on the eMMC
+## 5. Install on the eMMC
 
 This **erases Remix OS's data** (apps, accounts, files on the internal storage). Remix OS itself comes back with section 7.
 
 From the bootloader in fastboot mode:
 
 ```
+fastboot flash boot boot.img
 fastboot -S 256M flash system system.img
 fastboot -S 256M flash cache system_ext.img
 fastboot format:ext4 userdata
-fastboot boot boot.img
+fastboot reboot
 ```
 
 - `-S 256M` sends the sparse images in 256 MB pieces (`system.img` is about 1 GB).
 - `system_ext` goes to the stock **cache** partition (CAC): LineageOS does not need a cache partition, and the 1000 MB system partition is too small for both. The vendor files are inside system.
 - The recovery partition keeps Remix OS's recovery.
-- The first boot compiles apps on the tablet and takes several minutes. Test builds are `userdebug` with adb on from the first boot, so `adb logcat` works even if the display does not.
+- The first boot compiles apps on the tablet and takes several minutes.
+- To update, leave out `fastboot format:ext4 userdata`. A build signed with other keys (your own build, for example) cannot reuse the data of a release: format userdata when switching.
 
-The boot image is only RAM-booted here: after a power-off the tablet starts Remix OS's boot image again, which cannot start the LineageOS system. Repeat `fastboot boot boot.img` for each start. Flashing it (`fastboot flash boot boot.img`) is the last step, once a build has proved itself; the project has not done it yet.
+Releases keep adb off until it is enabled in the developer options and the PC is accepted. Development builds (`SK1WG_DEVEL=true`, [TECHNICAL.md](TECHNICAL.md)) have adb on from the first boot, so `adb logcat` works even if the display does not, and after a kernel panic they restart into the bootloader: RAM-boot the mini recovery and read the kernel and init log in `/proc/last_kmsg`.
 
-If a boot fails, the tablet restarts into the bootloader. RAM-boot the mini recovery and read the kernel and init log in `/proc/last_kmsg`.
+To try a different kernel without flashing it, `fastboot boot boot.img` runs it from RAM once.
 
 ## 6. The microSD alternative (eMMC untouched)
 

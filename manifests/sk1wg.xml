@@ -8,25 +8,23 @@
   <remote name="html6405" fetch="https://github.com/html6405" />
   <remote name="simoneluconi" fetch="https://github.com/simoneluconi" />
 
-  <!-- The device tree and the kernel are not published yet: clone them by
-       hand into device/jide/sk1wg (branch lineage-21.0) and
-       kernel/jide/sk1wg (branch sk1wg). Once they are on GitHub, add them
-       here, for example:
+  <!-- The device tree and the kernel. The proprietary files go to
+       vendor/jide/sk1wg: extract them from Jide's Remix OS 2.0.305
+       system.img with device/jide/sk1wg/extract-files.sh (TECHNICAL.md) -->
   <project path="device/jide/sk1wg" name="android_device_jide_sk1wg" remote="simoneluconi" revision="lineage-21.0" />
   <project path="kernel/jide/sk1wg" name="android_kernel_jide_sk1wg" remote="simoneluconi" revision="sk1wg" />
-  -->
 
   <!-- LineageOS-UL dropped vendor.lineage.power@1.0; html6405's fork keeps it -->
   <remove-project name="LineageOS-UL/android_hardware_lineage_interfaces" />
   <project path="hardware/lineage/interfaces" name="android_hardware_lineage_interfaces" remote="html6405" revision="lineage-21.0-qpr3" />
 
   <!-- frameworks/av and frameworks/base with camera HAL1 (html6405's pair,
-       UL's final head merged on top). NVIDIA's T114 camera.tegra.so is an
-       old HAL; keeping HAL1 support leaves that door open -->
+       UL's final head merged on top). frameworks/base's sk1wg branch is
+       gd1 plus one boot animation fix for ES 2.0 GPUs (NPOT textures) -->
   <remove-project name="LineageOS-UL/android_frameworks_av" />
   <project path="frameworks/av" name="android_frameworks_av" remote="simoneluconi" revision="gd1" />
   <remove-project name="LineageOS-UL/android_frameworks_base" />
-  <project path="frameworks/base" name="android_frameworks_base" remote="simoneluconi" revision="gd1" />
+  <project path="frameworks/base" name="android_frameworks_base" remote="simoneluconi" revision="sk1wg" />
 
   <!-- Kernel 3.4 fixes: tombstoned without O_TMPFILE, adbd without
        FunctionFS AIO, unwinding without PTRACE_GETREGSET, a pthread_t check

@@ -4,20 +4,20 @@ A custom ROM that brings Android 14 (LineageOS 21) to the **Jide Remix Ultra Tab
 
 | Model | Support |
 |---|---|
-| Remix Ultra Tablet **REMIX SK1WG** (Wi-Fi, 2 GB / 64 GB) | In development, see below |
+| Remix Ultra Tablet **REMIX SK1WG** (Wi-Fi, 2 GB / 64 GB) | Supported: first release, see below |
 | Other Remix devices (Remix Mini, Remix Pro, ...) | Not supported |
 
 Jide left the consumer market in July 2017 and ended Remix OS, and the last firmware it shipped is Remix OS 2.0.305 (Android 5.1.1, June 2016). The tablet still works, but it is very slow (Remix OS and Google Play services on 2 GB of RAM and an old eMMC) and nothing on it gets security updates any more. This project puts a clean, lightweight Android on it, with the hardware that makes the tablet useful: the 1920x1080 screen with GPU acceleration, touch, Wi-Fi, Bluetooth, audio, sensors and the keyboard cover.
 
 There are no Google services: the system is LineageOS's "mini" Wi-Fi tablet set, and the stock 1000 MB system partition is kept as it is.
 
-> **Status: under development, not released.** LineageOS 21 boots and is smooth to use, but the kernel is still started from the PC with `fastboot boot` (it is not flashed yet), SELinux is permissive and some bring-up aids are still on. There are no public builds. See [Install](#install).
+> **Status: first release.** LineageOS 21 installs with fastboot and runs day to day: smooth at the panel's full 1920x1080, with Wi-Fi, Bluetooth audio, speaker, headphones, microphone, sensors and the keyboard cover. Known limits: **the camera does not work yet**, SELinux is permissive, and updates are installed by re-flashing. Download it from [Releases](../../releases/latest), then follow [Install](#install).
 
 ## What works
 
 | Area | Status |
 |---|---|
-| Boot to the home screen | Works, with the kernel RAM-booted (`fastboot boot`); the boot partition is not flashed yet |
+| Boot to the home screen | Works, from the flashed boot partition |
 | Display, 1920x1080, GPU | Works, through NVIDIA's own Tegra 4 graphics drivers from Remix OS with compatibility shims. SurfaceFlinger composes on the GPU (NVIDIA's overlay path garbles the panel) |
 | Touch | Works (FocalTech FT5x06). No double tap to wake: the controller ignores it |
 | Smoothness | Smooth scrolling once the everyday apps are compiled, which happens on the device after the first boot |
@@ -29,9 +29,9 @@ There are no Google services: the system is LineageOS's "mini" Wi-Fi tablet set,
 | Sensors | Accelerometer, gyroscope, compass and light sensor are listed. Adaptive brightness works |
 | Backlight | Works, off when the screen sleeps |
 | Keyboard cover | Closing the cover puts the tablet to sleep; opening it does not wake it (the power key does). The keyboard and touchpad work (plain USB HID) |
-| Camera | **Not working yet**: the stock camera driver needs Android 5.1 libraries. A V4L2 port is planned |
-| Security | SELinux is permissive and the security patch level is from early 2025 |
-| Updates | By re-flashing; there is no over-the-air update |
+| Camera | **Not working yet**: the stock camera driver needs Android 5.1 libraries. A V4L2 driver is in progress: the back camera already sends frames to the Tegra's CSI receiver, the images do not reach memory yet |
+| Security | SELinux is permissive and the security patch level is from early 2025. Builds are signed with the project's own release keys |
+| Updates | By re-flashing (data kept); there is no over-the-air update |
 
 The bring-up log, with every problem found and how it was fixed, is in [docs/BRINGUP.md](docs/BRINGUP.md).
 
@@ -54,15 +54,42 @@ The bring-up log, with every problem found and how it was fixed, is in [docs/BRI
 
 ## Install
 
-**There are no public builds yet.** For developers and testers who build it themselves, [docs/INSTALL.md](docs/INSTALL.md) has every step and the way back to Remix OS.
+Installing replaces Remix OS and **erases everything on the tablet** (apps, accounts, files). The bootloader of the REMIX SK1WG is already unlocked, so there is nothing to unlock: you only need fastboot.
 
-In short:
-1. **You need**: a REMIX SK1WG, a PC with Android's platform-tools (`fastboot`, `adb`; on Windows, Google's USB driver), a good USB cable, and the battery at 50% or more.
-2. **Download Jide's official Remix OS 2.0.305 images** first and keep them. With them, fastboot can always bring the tablet back to stock.
-3. **Back up** the tablet's own partitions with the mini recovery, started from RAM with `fastboot boot` (nothing is written).
-4. **Write system and system_ext** with fastboot, format userdata, then start the kernel with `fastboot boot boot.img`.
+### What you need
 
-**Warnings**
+- A Jide Remix Ultra Tablet, model **REMIX SK1WG**, with the battery at 50% or more. Other Remix devices are different hardware.
+- A PC with Android's [platform-tools](https://developer.android.com/tools/releases/platform-tools) (`fastboot`). On Windows, also Google's USB driver for the bootloader ([how](docs/INSTALL.md#2-what-you-need)).
+- A good USB cable, plugged into the PC itself, not a hub.
+- The latest **`...-sk1wg-images.zip`** from [Releases](../../releases/latest), extracted. It holds `boot.img`, `system.img` and `system_ext.img`.
+- Recommended: Jide's official Remix OS 2.0.305 images, to go back to stock one day ([how](docs/INSTALL.md#7-going-back-to-remix-os)).
+
+### Steps
+
+1. **Start the bootloader.** Switch the tablet off (hold Power for 10-15 s if it does not respond). Hold **Volume Up + Power** until the bootloader menu appears, then pick **"Fastboot Protocol"** on screen. Without that last step every fastboot command times out.
+2. **Check the connection.** In a terminal, in the folder with the images:
+   ```
+   fastboot devices
+   ```
+   The tablet must be listed. `fastboot getvar product` should answer `Macallan`.
+3. **Flash and wipe:**
+   ```
+   fastboot flash boot boot.img
+   fastboot -S 256M flash system system.img
+   fastboot -S 256M flash cache system_ext.img
+   fastboot format:ext4 userdata
+   fastboot reboot
+   ```
+   `system_ext` goes to the stock **cache** partition on purpose: the system partition is too small for both. `-S 256M` sends the large images in pieces.
+4. **First boot.** It takes several minutes: Android compiles the apps on the tablet. Then the setup wizard starts.
+
+**Updating** to a newer release: the same commands without `fastboot format:ext4 userdata`, so your data stays.
+
+**Going back to Remix OS**: flash Jide's official images, see [docs/INSTALL.md](docs/INSTALL.md#7-going-back-to-remix-os).
+
+**Backup**: only your own files and photos, which the wipe erases. Nothing else is needed: the install writes only boot, system, cache and userdata, which Jide's official images restore, and never touches the bootloader or the tablet's other partitions.
+
+### Warnings
 - Flashing a custom system always has some risk. You do it at your own risk.
 - **Never flash or erase the bootloader** (`fastboot flash bootloader`). A bad bootloader is the one thing fastboot cannot fix.
 - **Never write the `USP` (staging) partition.** On NVIDIA devices the bootloader installs a bootloader update it finds there at the next boot; a bad one is a hard brick.
@@ -79,7 +106,9 @@ In short:
 
 Repositories:
 - this one: docs, `manifests/`, `tools/` and the mini recovery sources (`minirecovery/`);
-- the device tree, `device/jide/sk1wg` (branch `lineage-21.0`), and the kernel, a fork of the community CM13 kernel for this tablet (branch `sk1wg`): both still to be published on GitHub.
+- the device tree: [android_device_jide_sk1wg](https://github.com/simoneluconi/android_device_jide_sk1wg) (branch `lineage-21.0`), at `device/jide/sk1wg`;
+- the kernel: [android_kernel_jide_sk1wg](https://github.com/simoneluconi/android_kernel_jide_sk1wg) (branch `sk1wg`), a fork of TerenceWSK's community CM13 kernel for this tablet;
+- frameworks/base: branch `sk1wg` of [android_frameworks_base](https://github.com/simoneluconi/android_frameworks_base/tree/sk1wg) (the Galaxy Camera's `gd1` plus a boot animation fix).
 
 Related: [Galaxy Camera Revived](https://github.com/simoneluconi/GalaxyCameraRevived), the sibling project (LineageOS 21 on the Samsung Galaxy Camera). Its fixes for old 3.4 kernels in bionic, system/core, adb, unwinding, the frameworks and the launcher are used here as they are.
 

@@ -13,14 +13,14 @@ How the port is put together and how to build it. The bring-up history (every pr
 
 ## 2. Source trees and branches
 
-The Android tree is LineageOS-UL 21 with the Galaxy Camera Revived forks for old 3.4 kernels, plus the tablet's own device tree and kernel. `manifests/sk1wg.xml` (this repo) lists the forks.
+The Android tree is LineageOS-UL 21 with the Galaxy Camera Revived forks for old 3.4 kernels, plus the tablet's own device tree and kernel. `manifests/sk1wg.xml` (this repo) lists them all.
 
 | Path | Upstream | Our branch, and what it adds |
 |---|---|---|
-| `device/jide/sk1wg` (branch `lineage-21.0`) | new | **The device tree** (Apache-2.0): board config, NVIDIA graphics through HIDL passthrough adapters and shims (`interfaces/`, `shims/`), an audio HAL from the Android emulator's (`audio/`), a Lights HAL, a sensors wrapper for NVIDIA's 0.1 sensors HAL, Wi-Fi without a vendor HAL, Bluetooth, the power HAL configuration, overlays, the debloat (`RemovePackages`), the legacy health@2.0 HAL, and the binary patches applied to NVIDIA's gralloc and HWC at extraction. To be published on GitHub. |
-| `kernel/jide/sk1wg` (branch `sk1wg`) | [TerenceWSK `cm-13.0`](https://github.com/TerenceWSK/cm_android_kernel_jide_sk1wg_sk1w) (NVIDIA 3.4.112) | `lineageos_sk1wg_defconfig`. Android 8+ backports from LineageOS's Tegra 4 roth kernel (binder with the 64-bit ABI and binder/hwbinder/vndbinder, seccomp-bpf with TSYNC, no_new_privs, ambient capabilities, UID routing, mount namespaces with `setns()`, `mmap_rnd_bits`), from html6405 (getrandom, memfd_create, timerfd alarm clocks, binder sender security context) and our own fixes (O_PATH `fstat()`, SELinux xperms, sub-thread `/proc` access, the nexthop lookup, a system-heap ION device for Codec2, the lid switch, EMC tuning). The list is in [BRINGUP.md](BRINGUP.md). To be published as a GPL fork. |
+| `device/jide/sk1wg` (branch `lineage-21.0`) | new | **The device tree** (Apache-2.0): board config, NVIDIA graphics through HIDL passthrough adapters and shims (`interfaces/`, `shims/`), an audio HAL from the Android emulator's (`audio/`), a Lights HAL, a sensors wrapper for NVIDIA's 0.1 sensors HAL, Wi-Fi without a vendor HAL, Bluetooth, the power HAL configuration, overlays, the debloat (`RemovePackages`), the legacy health@2.0 HAL, and the binary patches applied to NVIDIA's gralloc and HWC at extraction. [android_device_jide_sk1wg](https://github.com/simoneluconi/android_device_jide_sk1wg). |
+| `kernel/jide/sk1wg` (branch `sk1wg`) | [TerenceWSK `cm-13.0`](https://github.com/TerenceWSK/cm_android_kernel_jide_sk1wg_sk1w) (NVIDIA 3.4.112) | `lineageos_sk1wg_defconfig`. Android 8+ backports from LineageOS's Tegra 4 roth kernel (binder with the 64-bit ABI and binder/hwbinder/vndbinder, seccomp-bpf with TSYNC, no_new_privs, ambient capabilities, UID routing, mount namespaces with `setns()`, `mmap_rnd_bits`), from html6405 (getrandom, memfd_create, timerfd alarm clocks, binder sender security context) and our own fixes (O_PATH `fstat()`, SELinux xperms, sub-thread `/proc` access, the nexthop lookup, a system-heap ION device for Codec2, the lid switch, EMC tuning). The list is in [BRINGUP.md](BRINGUP.md). [android_kernel_jide_sk1wg](https://github.com/simoneluconi/android_kernel_jide_sk1wg), a GPL fork. |
 | `frameworks/av`, `frameworks/base`, `bionic`, `system/core`, `packages/modules/adb`, `system/unwinding`, `packages/apps/Trebuchet` | LineageOS-UL / html6405 / AOSP | Galaxy Camera Revived's `gd1` branches, unchanged: fixes for 3.4 kernels (adbd without FunctionFS AIO, tombstoned without `O_TMPFILE`, unwinding without `PTRACE_GETREGSET`), camera HAL1 support in the frameworks, a launcher touch race. None of them is specific to the Galaxy Camera; see [its TECHNICAL.md](https://github.com/simoneluconi/GalaxyCameraRevived/blob/main/docs/TECHNICAL.md#4-source-trees-and-branches). |
-| `frameworks/base`, local branch `sk1wg` | `gd1` above | One commit: `bootanimation` always uses NPOT textures (ES 2.0 core allows them). Without it the boot animation shows noise on this GPU. It is meant to move to the shared `gd1` branch; until then a build from the published manifest has the noisy boot animation. |
+| `frameworks/base`, branch [`sk1wg`](https://github.com/simoneluconi/android_frameworks_base/tree/sk1wg) | `gd1` above | One commit: `bootanimation` always uses NPOT textures (ES 2.0 core allows them). Without it the boot animation shows noise on this GPU. The manifest uses this branch, so the Galaxy Camera's `gd1` is unchanged. |
 | `hardware/lineage/interfaces` | html6405 `lineage-21.0-qpr3` | none (replaces UL's, which dropped `vendor.lineage.power@1.0`). |
 
 This repository holds what is not part of the Android tree: the docs, `manifests/`, `tools/` and the mini recovery sources (`minirecovery/`).
@@ -46,7 +46,6 @@ cp <this repo>/manifests/sk1wg.xml <this repo>/manifests/zz-lineage-snapshot.xml
 repo sync -c -j8
 ```
 
-- Until the device tree and kernel are published, they are not in the manifest: put them in `device/jide/sk1wg` (branch `lineage-21.0`) and `kernel/jide/sk1wg` (branch `sk1wg`) by hand.
 - With a Galaxy Camera Revived tree on the same disk, `repo init --reference=<that tree>` borrows its git objects. Keep the two trees separate: never build sk1wg in the Galaxy Camera's tree, so the two never share an `out/`.
 - `repo sync` leaves `external/chromium-webview/prebuilt/arm/webview.apk` as a Git LFS pointer: run `git lfs pull` in that project.
 
@@ -75,6 +74,12 @@ m droid
 - `SK1WG_SDCARD_ROOT=true` in the environment builds the microSD variant (`rootdir/etc/fstab.macallan.sdcard`); only `boot.img` and `system.img` differ.
 - Avoid a single-module `m <module>` between full builds: the next `m droid` then rebuilds most of the tree.
 - The version reads `21-<date>-UNOFFICIAL-JideRemixTabletRevived-sk1wg`.
+
+### Development and release builds
+
+`SK1WG_DEVEL=true` in the environment makes a development build: adb on from the first boot without the key prompt (`WITH_ADB_INSECURE`), adb kept in the "mtp" USB configuration, and `oops=panic tegra_panic_to_bootloader` on the kernel command line, so a kernel panic restarts into the bootloader with the RAM console kept. Without it, as for releases, a panic reboots normally and adb stays off until enabled and authorized. Both are `userdebug`, both keep SELinux permissive.
+
+Releases are built without `SK1WG_DEVEL`, with `BUILD_USERNAME`, `BUILD_HOSTNAME` and `BUILD_NUMBER` set so that no local user or machine name reaches the build properties, and with `m droid target-files-package otatools`. They are then signed with the project's release keys (kept private, outside every repository) following LineageOS's signing guide: `sign_target_files_apks` with the APK keys and one container key plus one payload key per APEX listed in `META/apexkeys.txt`, then `img_from_target_files`. Two quirks: this build has no AVB, so `avb_avbtool=avbtool` has to be added to the target files' `META/misc_info.txt` before signing (the APEX payloads still need it), and the signing tools need the tree's JDK on `PATH`. A build signed with other keys cannot reuse a release's `/data`.
 
 ### Partitions
 
@@ -118,14 +123,11 @@ Other tools: `tools/unpackboot.py` (unpack a v0 boot image), `tools/simg2img.py`
 - **Performance**: the system partition is full, so only the boot image and system_server are compiled ahead of time; `init.sk1wg.dexopt.sh` compiles the everyday apps into `/data` after the first boot. Until it has run, the UI is slow.
 - Compare with stock before blaming the kernel: some warnings (camera GPIOs, for one) appear on the stock kernel too.
 
-## 6. Known gaps before a public release
+## 6. Known gaps
 
-- **Bring-up aids still on**: adb without authentication on userdebug builds (`WITH_ADB_INSECURE`), adb kept in the "mtp" USB configuration on debuggable builds, the kernel's `oops=panic` and `TEGRA_PANIC_TO_BOOTLOADER`.
 - **SELinux is permissive.** Before enforcing: types for the new device nodes (`/dev/ion`, `/dev/lightsensor`, the PM QoS nodes, `tegra_floor`, the backlight), the dexopt script's domain, and the kernel has no SELinux binder hooks.
-- **The kernel is not flashed yet**; every boot is a `fastboot boot`.
-- WebView's ANGLE flags are only written on debuggable builds; a user build needs another way.
+- WebView's ANGLE flags are only written on debuggable builds (releases are `userdebug`); a user build needs another way.
 - The gralloc lock-wait patch gives up the cross-process buffer lock's mutual exclusion (GPU access is still ordered by fences). The clean fix is to keep NVIDIA's HWC from locking the layers it never reads.
-- No camera.
+- No camera yet: the V4L2 driver work is in the kernel, off in the defconfig (BRINGUP.md, camera).
 - The power HAL's clock floors and the EMC tuning: battery drain not measured yet.
-- The `frameworks/base` boot animation fix is on a local branch only.
 - The security patch level is frozen at 2025-03-01.
