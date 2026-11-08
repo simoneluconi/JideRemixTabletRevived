@@ -28,7 +28,7 @@ There are no Google services: the system is LineageOS's "mini" Wi-Fi tablet set,
 | Web browser and WebView apps | Work on the GPU through ANGLE |
 | Sensors | Accelerometer, gyroscope, compass and light sensor are listed. Adaptive brightness works |
 | Backlight | Works, off when the screen sleeps |
-| Keyboard cover | Closing the cover puts the tablet to sleep; opening it does not wake it (the power key does). The keyboard and touchpad are plain USB HID devices |
+| Keyboard cover | Closing the cover puts the tablet to sleep; opening it does not wake it (the power key does). The keyboard and touchpad work (plain USB HID) |
 | Camera | **Not working yet**: the stock camera driver needs Android 5.1 libraries. A V4L2 port is planned |
 | Security | SELinux is permissive and the security patch level is from early 2025 |
 | Updates | By re-flashing; there is no over-the-air update |
@@ -48,6 +48,7 @@ The bring-up log, with every problem found and how it was fixed, is in [docs/BRI
 | Audio | TI TLV320AIC325x |
 | Sensors | MPU-3050 gyroscope, KXTF9 accelerometer, AK8963 compass, CM3217 light sensor |
 | Keyboard cover | Plain USB HID over the pogo contacts (keyboard + touchpad), a Hall switch for the lid |
+| Video out | None: the SoC's HDMI block (and its HDA audio device) is there, but the tablet has no HDMI connector |
 | Stock kernel | NVIDIA Linux 3.4.108 |
 | Bootloader | Unlocked, unsigned images boot (`fastboot boot` works without flashing) |
 
