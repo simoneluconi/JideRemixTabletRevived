@@ -4,14 +4,14 @@ A custom ROM that brings Android 14 (LineageOS 21) to the **Jide Remix Ultra Tab
 
 | Model | Support |
 |---|---|
-| Remix Ultra Tablet **REMIX SK1WG** (Wi-Fi, 2 GB / 64 GB) | Supported: first release, see below |
+| Remix Ultra Tablet **REMIX SK1WG** (Wi-Fi, 2 GB / 64 GB) | Supported, see below |
 | Other Remix devices (Remix Mini, Remix Pro, ...) | Not supported |
 
 Jide left the consumer market in July 2017 and ended Remix OS, and the last firmware it shipped is Remix OS 2.0.305 (Android 5.1.1, June 2016). The tablet still works, but it is very slow (Remix OS and Google Play services on 2 GB of RAM and an old eMMC) and nothing on it gets security updates any more. This project puts a clean, lightweight Android on it, with the hardware that makes the tablet useful: the 1920x1080 screen with GPU acceleration, touch, Wi-Fi, Bluetooth, audio, sensors and the keyboard cover.
 
 There are no Google services: the system is LineageOS's "mini" Wi-Fi tablet set, and the stock 1000 MB system partition is kept as it is.
 
-> **Status: first release.** LineageOS 21 installs with fastboot and runs day to day: smooth at the panel's full 1920x1080, with Wi-Fi, Bluetooth audio, speaker, headphones, microphone, sensors and the keyboard cover. Known limits: **the camera does not work yet**, SELinux is permissive, and updates are installed by re-flashing. Download it from [Releases](../../releases/latest), then follow [Install](#install).
+> **Status: usable day to day, no camera.** LineageOS 21 installs with fastboot and runs smoothly at the panel's full 1920x1080, with Wi-Fi, Bluetooth audio, speaker, headphones, both built-in microphones and the headset's, sensors with auto-rotation, and the keyboard cover. Known limits: **the cameras do not work in apps** (the back camera already takes pictures in a kernel test, the front one does not send images yet), SELinux is permissive, and updates are installed by re-flashing. Development is paused at this point. Download the latest build from [Releases](../../releases/latest), then follow [Install](#install).
 
 ## What works
 
@@ -23,13 +23,15 @@ There are no Google services: the system is LineageOS's "mini" Wi-Fi tablet set,
 | Smoothness | Smooth scrolling once the everyday apps are compiled, which happens on the device after the first boot |
 | Wi-Fi | Works, 2.4 GHz only (the BCM43341 has no 5 GHz). No hotspot, no Wi-Fi Direct |
 | Bluetooth | Works: Bluetooth headphones play through A2DP (AAC/SBC, encoded in software). The chip has no address of its own, so the first boot makes a random one |
-| Audio | Speaker, wired headphones (the speaker switches off while they are plugged in) and the internal microphone work. A headset microphone is never selected |
+| Audio | Speaker and wired headphones work (the speaker switches off while they are plugged in) |
+| Microphones | Both built-in microphones work (recorded as stereo, one per channel). With a plug in the headphone jack, apps record from the headset's microphone only: the jack cannot tell headphones from a headset, so with plain headphones recordings are silent until you unplug them. The built-in microphones may sound a little quiet |
 | Media playback | Works through Android's Codec2 software codecs. NVIDIA's hardware video decoders are not used (they need Android 5.1 libraries) |
 | Web browser and WebView apps | Work on the GPU through ANGLE, with WebGL 1 (no WebGL 2: the GPU is OpenGL ES 2.0). Pages that blur what is behind them (CSS `backdrop-filter`) scroll slowly: the Tegra 4 GPU takes 40-100 ms per frame on them |
-| Sensors | Accelerometer, gyroscope, compass and light sensor are listed. Adaptive brightness works |
+| Sensors | Accelerometer, gyroscope, compass and light sensor work. Auto-rotation and adaptive brightness work |
+| Battery and charging | Charge level and charging from both connectors (micro USB and the power connector). The charging animation starts at the connector you plugged in. The battery temperature shown is the board's: the fuel gauge has no sensor of its own |
 | Backlight | Works, off when the screen sleeps |
 | Keyboard cover | Closing the cover puts the tablet to sleep; opening it does not wake it (the power key does). The keyboard and touchpad work (plain USB HID) |
-| Camera | **Not working yet**: the stock camera driver needs Android 5.1 libraries. A V4L2 driver is in progress: the back camera already sends frames to the Tegra's CSI receiver, the images do not reach memory yet |
+| Cameras | **Not working in apps**: the stock camera driver needs Android 5.1 libraries, so the project has its own V4L2 kernel driver (in the kernel source, off in this build) and still needs an Android camera HAL. With the driver, the **back camera** takes correct pictures at up to 2592x1944 in a test program. The **front camera** powers up but sends no images yet: it is on another CSI port whose setup is still unknown. Details in [BRINGUP.md](docs/BRINGUP.md) |
 | Security | SELinux is permissive and the security patch level is from early 2025. Builds are signed with the project's own release keys |
 | Updates | By re-flashing (data kept); there is no over-the-air update |
 
@@ -109,6 +111,8 @@ Repositories:
 - the device tree: [android_device_jide_sk1wg](https://github.com/simoneluconi/android_device_jide_sk1wg) (branch `lineage-21.0`), at `device/jide/sk1wg`;
 - the kernel: [android_kernel_jide_sk1wg](https://github.com/simoneluconi/android_kernel_jide_sk1wg) (branch `sk1wg`), a fork of TerenceWSK's community CM13 kernel for this tablet;
 - frameworks/base: branch `sk1wg` of [android_frameworks_base](https://github.com/simoneluconi/android_frameworks_base/tree/sk1wg) (the Galaxy Camera's `gd1` plus a boot animation fix and the charging animation for the tablet's two connectors).
+
+What is left to do, in order: the front camera (dump the VI/CSI registers while stock Remix OS streams from it, see [BRINGUP.md](docs/BRINGUP.md)), a camera HAL for both cameras, SELinux enforcing, and the GPU cost of blurred web pages.
 
 Related: [Galaxy Camera Revived](https://github.com/simoneluconi/GalaxyCameraRevived), the sibling project (LineageOS 21 on the Samsung Galaxy Camera). Its fixes for old 3.4 kernels in bionic, system/core, adb, unwinding, the frameworks and the launcher are used here as they are.
 
