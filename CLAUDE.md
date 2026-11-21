@@ -45,6 +45,8 @@ Target **LineageOS 21 directly** (user decision 2026-11-05), on the LineageOS-UL
 
 ## LineageOS 21 tree (2026-11-06)
 
+**Paused 2026-11-21** after release 21.0-20261121: the WSL trees below (`~/android/lineage-sk1wg`, `~/android/sk1wg`) were deleted to free disk space. To resume, sync again as in [docs/TECHNICAL.md](docs/TECHNICAL.md) and pick up from BRINGUP's "Release 21.0-20261121" list; the release keys and the helper scripts are kept privately, outside the repo.
+
 - **`~/android/lineage-sk1wg`** (WSL): LineageOS-UL 21, own tree (never build sk1wg in the Galaxy Camera's `~/android/lineage`). Synced with `manifests/sk1wg.xml` + GalaxyCameraRevived's `zz-lineage-snapshot.xml`, `--reference` to the GC tree.
 - `device/jide/sk1wg` (git, branch `lineage-21.0`), `kernel/jide/sk1wg` (clone of our kernel branch `sk1wg`; `git pull` after kernel commits), `vendor/jide/sk1wg` (from `extract-files.sh <device-dump/stock-2.0.305>`, never committed).
 - `lunch lineage_sk1wg-ap2a-userdebug`; `m bootimage` works (6 min). Details, graphics analysis, partition plan and the two test paths (eMMC or microSD with `SK1WG_SDCARD_ROOT=true`): [docs/BRINGUP.md](docs/BRINGUP.md).
